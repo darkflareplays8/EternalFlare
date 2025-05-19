@@ -1,11 +1,93 @@
-const { REST, Routes, SlashCommandBuilder } = require('discord.js');
+const { REST, Routes, SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 require('dotenv').config();
 
 const commands = [
-  new SlashCommandBuilder().setName('ping').setDescription('Replies with Pong!')
+  new SlashCommandBuilder()
+    .setName('ping')
+    .setDescription('Replies with Pong!'),
+  
+  new SlashCommandBuilder()
+    .setName('rkick')
+    .setDescription('Kicks all members with a specific role')
+    .addRoleOption(option => 
+      option.setName('role')
+        .setDescription('The role to kick all members from')
+        .setRequired(true))
+    .addStringOption(option => 
+      option.setName('reason')
+        .setDescription('The reason for kicking (will be DMed to users)')
+        .setRequired(false))
+    .addIntegerOption(option =>
+      option.setName('days')
+        .setDescription('Number of days of messages to delete (0-7)')
+        .setMinValue(0)
+        .setMaxValue(7)
+        .setRequired(false))
+    .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
+  
+  new SlashCommandBuilder()
+    .setName('rban')
+    .setDescription('Bans all members with a specific role')
+    .addRoleOption(option => 
+      option.setName('role')
+        .setDescription('The role to ban all members from')
+        .setRequired(true))
+    .addStringOption(option => 
+      option.setName('reason')
+        .setDescription('The reason for banning (will be DMed to users)')
+        .setRequired(false))
+    .addIntegerOption(option =>
+      option.setName('days')
+        .setDescription('Number of days of messages to delete (0-7)')
+        .setMinValue(0)
+        .setMaxValue(7)
+        .setRequired(false))
+    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+    
+  new SlashCommandBuilder()
+    .setName('kick')
+    .setDescription('Kicks a user from the server')
+    .addUserOption(option => 
+      option.setName('user')
+        .setDescription('The user to kick')
+        .setRequired(true))
+    .addStringOption(option => 
+      option.setName('reason')
+        .setDescription('The reason for kicking (will be DMed to the user)')
+        .setRequired(false))
+    .addIntegerOption(option =>
+      option.setName('days')
+        .setDescription('Number of days of messages to delete (0-7)')
+        .setMinValue(0)
+        .setMaxValue(7)
+        .setRequired(false))
+    .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
+    
+  new SlashCommandBuilder()
+    .setName('ban')
+    .setDescription('Bans a user from the server')
+    .addUserOption(option => 
+      option.setName('user')
+        .setDescription('The user to ban')
+        .setRequired(true))
+    .addStringOption(option => 
+      option.setName('reason')
+        .setDescription('The reason for banning (will be DMed to the user)')
+        .setRequired(false))
+    .addIntegerOption(option =>
+      option.setName('days')
+        .setDescription('Number of days of messages to delete (0-7)')
+        .setMinValue(0)
+        .setMaxValue(7)
+        .setRequired(false))
+    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+    
+  new SlashCommandBuilder()
+    .setName('about')
+    .setDescription('Information about the bot and its creator')
 ].map(command => command.toJSON());
 
-const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
+const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
 (async () => {
   try {

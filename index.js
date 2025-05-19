@@ -128,10 +128,10 @@ client.on('interactionCreate', async interaction => {
     const embed = new EmbedBuilder()
       .setColor(0x0099FF)
       .setTitle('About FlareBot')
-      .setDescription(`This is a bot created by [darkflarePlays8](https://discord.com/users/darkflarePlays8). It is fully coded in JavaScript and will always be free.`)
+      .setDescription(`This is a bot created by [darkflareplays8](https://discord.com/users/darkflarePlays8). It is fully coded in JavaScript and will always be free.`)
       .setThumbnail(client.user.displayAvatarURL())
       .setTimestamp()
-      .setFooter({ text: 'FlareBot Moderation', iconURL: client.user.displayAvatarURL() });
+      .setFooter({ text: 'FlareBot Discord', iconURL: client.user.displayAvatarURL() });
     
     await interaction.reply({ embeds: [embed] });
   }
