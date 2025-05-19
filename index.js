@@ -102,6 +102,21 @@ client.on('interactionCreate', async interaction => {
       });
     }
     
+    // Check role hierarchy
+    const botMember = interaction.guild.members.me;
+    const targetRole = role;
+    
+    // Bot's highest role position
+    const botHighestRole = botMember.roles.highest;
+    
+    // Check if the bot's highest role is lower than the target role
+    if (botHighestRole.position <= targetRole.position) {
+      return interaction.reply({
+        content: 'Unable to do this action, please move my role above the role of whose members will be kicked.',
+        ephemeral: true
+      });
+    }
+    
     await interaction.deferReply();
     
     try {
@@ -198,6 +213,21 @@ client.on('interactionCreate', async interaction => {
       return interaction.reply({ 
         content: 'I don\'t have permission to ban members!', 
         ephemeral: true 
+      });
+    }
+    
+    // Check role hierarchy
+    const botMember = interaction.guild.members.me;
+    const targetRole = role;
+    
+    // Bot's highest role position
+    const botHighestRole = botMember.roles.highest;
+    
+    // Check if the bot's highest role is lower than the target role
+    if (botHighestRole.position <= targetRole.position) {
+      return interaction.reply({
+        content: 'Unable to do this action, please move my role above the role of whose members will be banned.',
+        ephemeral: true
       });
     }
     
