@@ -44,6 +44,44 @@ const commands = [
         .setMinValue(0)
         .setMaxValue(7)
         .setRequired(false))
+    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+    
+  new SlashCommandBuilder()
+    .setName('kick')
+    .setDescription('Kicks a user from the server')
+    .addUserOption(option => 
+      option.setName('user')
+        .setDescription('The user to kick')
+        .setRequired(true))
+    .addStringOption(option => 
+      option.setName('reason')
+        .setDescription('The reason for kicking (will be DMed to the user)')
+        .setRequired(false))
+    .addIntegerOption(option =>
+      option.setName('days')
+        .setDescription('Number of days of messages to delete (0-7)')
+        .setMinValue(0)
+        .setMaxValue(7)
+        .setRequired(false))
+    .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
+    
+  new SlashCommandBuilder()
+    .setName('ban')
+    .setDescription('Bans a user from the server')
+    .addUserOption(option => 
+      option.setName('user')
+        .setDescription('The user to ban')
+        .setRequired(true))
+    .addStringOption(option => 
+      option.setName('reason')
+        .setDescription('The reason for banning (will be DMed to the user)')
+        .setRequired(false))
+    .addIntegerOption(option =>
+      option.setName('days')
+        .setDescription('Number of days of messages to delete (0-7)')
+        .setMinValue(0)
+        .setMaxValue(7)
+        .setRequired(false))
     .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
 ].map(command => command.toJSON());
 
@@ -80,6 +118,144 @@ client.on('interactionCreate', async interaction => {
 
   if (interaction.commandName === 'ping') {
     await interaction.reply('Pong!');
+  }
+  
+  if (interaction.commandName === 'kick') {
+    const user = interaction.options.getUser('user');
+    const reason = interaction.options.getString('reason') || 'No reason provided';
+    const days = interaction.options.getInteger('days') || 0;
+    
+    if (!interaction.guild.members.me.permissions.has(PermissionFlagsBits.KickMembers)) {
+      return interaction.reply({ 
+        content: 'I don\'t have permission to kick members!', 
+        ephemeral: true 
+      });
+    }
+    
+    // Also check for message management permission if days > 0
+    if (days > 0 && !interaction.guild.members.me.permissions.has(PermissionFlagsBits.ManageMessages)) {
+      return interaction.reply({ 
+        content: 'I don\'t have permission to delete messages! Either set days to 0 or give me the Manage Messages permission.', 
+        ephemeral: true 
+      });
+    }
+    
+    // Get the GuildMember object
+    const member = interaction.guild.members.cache.get(user.id);
+    
+    // Check if the member exists in the guild
+    if (!member) {
+      return interaction.reply({
+        content: 'That user is not in this server.',
+        ephemeral: true
+      });
+    }
+    
+    // Check if the member is kickable
+    if (!member.kickable) {
+      return interaction.reply({
+        content: 'Unable to do this action, please move my role above the role of the user who will be kicked.',
+        ephemeral: true
+      });
+    }
+    
+    await interaction.deferReply();
+    
+    try {
+      // If days > 0, try to delete messages from this user
+      if (days > 0) {
+        try {
+          const channels = interaction.guild.channels.cache.filter(ch => ch.isTextBased());
+          
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - days);
+          
+          for (const [, channel] of channels) {
+            try {
+              // Bulk delete messages if possible
+              const messages = await channel.messages.fetch({ limit: 100 });
+              const userMessages = messages.filter(msg => 
+                msg.author.id === user.id && msg.createdAt > yesterday
+              );
+              
+              if (userMessages.size > 0) {
+                // Delete messages - note this is limited by Discord API
+                for (const [, msg] of userMessages) {
+                  await msg.delete().catch(() => {}); // Ignore errors for individual message deletions
+                }
+              }
+            } catch (channelError) {
+              console.error(`Failed to delete messages in ${channel.name}: ${channelError}`);
+            }
+          }
+        } catch (deleteError) {
+          console.error(`Failed to delete messages for ${user.tag}: ${deleteError}`);
+        }
+      }
+      
+      // Try to DM the user
+      try {
+        await user.send(`You have been kicked from ${interaction.guild.name} for the following reason: ${reason}`);
+      } catch (dmError) {
+        console.error(`Failed to DM user ${user.tag}: ${dmError}`);
+      }
+      
+      // Kick the member
+      await member.kick(`${reason} - Executed by ${interaction.user.tag} using /kick`);
+      
+      // Reply with success message
+      await interaction.editReply(`Successfully kicked ${user.tag}${days > 0 ? ` and deleted their messages from the last ${days} days` : ''}.`);
+    } catch (error) {
+      console.error(`Error in /kick command: ${error}`);
+      await interaction.editReply(`Failed to kick ${user.tag}: ${error.message}`);
+    }
+  }
+  
+  if (interaction.commandName === 'ban') {
+    const user = interaction.options.getUser('user');
+    const reason = interaction.options.getString('reason') || 'No reason provided';
+    const days = interaction.options.getInteger('days') || 0;
+    
+    if (!interaction.guild.members.me.permissions.has(PermissionFlagsBits.BanMembers)) {
+      return interaction.reply({ 
+        content: 'I don\'t have permission to ban members!', 
+        ephemeral: true 
+      });
+    }
+    
+    // Get the GuildMember object if they're in the guild
+    const member = interaction.guild.members.cache.get(user.id);
+    
+    // If the user is in the guild, check if they're bannable
+    if (member && !member.bannable) {
+      return interaction.reply({
+        content: 'Unable to do this action, please move my role above the role of the user who will be banned.',
+        ephemeral: true
+      });
+    }
+    
+    await interaction.deferReply();
+    
+    try {
+      // Try to DM the user if they're in the guild
+      try {
+        await user.send(`You have been banned from ${interaction.guild.name} for the following reason: ${reason}`);
+      } catch (dmError) {
+        console.error(`Failed to DM user ${user.tag}: ${dmError}`);
+      }
+      
+      // Ban the user with delete message days option
+      await interaction.guild.members.ban(user, {
+        deleteMessageDays: days,
+        reason: `${reason} - Executed by ${interaction.user.tag} using /ban`
+      });
+      
+      // Reply with success message
+      await interaction.editReply(`Successfully banned ${user.tag}${days > 0 ? ` and deleted their messages from the last ${days} days` : ''}.`);
+    } catch (error) {
+      console.error(`Error in /ban command: ${error}`);
+      await interaction.editReply(`Failed to ban ${user.tag}: ${error.message}`);
+    }
   }
   
   if (interaction.commandName === 'rkick') {
