@@ -41,11 +41,8 @@ registerCommands();
 
 const client = new Client({ 
   intents: [
-    GatewayIntentBits.Guilds
-    // Note: If you want to use the /rkick command, you need to:
-    // 1. Uncomment the line below
-    // 2. Enable SERVER MEMBERS INTENT in Discord Developer Portal
-    // GatewayIntentBits.GuildMembers 
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers // SERVER MEMBERS INTENT is now enabled
   ] 
 });
 
@@ -71,14 +68,6 @@ client.on('interactionCreate', async interaction => {
       });
     }
     
-    await interaction.reply({
-      content: `To use this command, the bot needs SERVER MEMBERS INTENT enabled in the Discord Developer Portal. Please enable this intent and then try again.`,
-      ephemeral: true
-    });
-    
-    /* NOTE: The code below will work once you enable SERVER MEMBERS INTENT in Discord Developer Portal
-    // This code is commented out until the proper intent is enabled
-
     await interaction.deferReply();
     
     try {
@@ -129,7 +118,6 @@ client.on('interactionCreate', async interaction => {
       console.error(`Error in /rkick command: ${error}`);
       await interaction.editReply(`An error occurred while executing the command: ${error.message}`);
     }
-    */
   }
 });
 
