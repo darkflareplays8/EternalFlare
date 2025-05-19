@@ -19,6 +19,12 @@ const commands = [
       option.setName('reason')
         .setDescription('The reason for kicking (will be DMed to users)')
         .setRequired(false))
+    .addIntegerOption(option =>
+      option.setName('days')
+        .setDescription('Number of days of messages to delete (0-7)')
+        .setMinValue(0)
+        .setMaxValue(7)
+        .setRequired(false))
     .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
   
   new SlashCommandBuilder()
@@ -79,10 +85,19 @@ client.on('interactionCreate', async interaction => {
   if (interaction.commandName === 'rkick') {
     const role = interaction.options.getRole('role');
     const reason = interaction.options.getString('reason') || 'No reason provided';
+    const days = interaction.options.getInteger('days') || 0;
     
     if (!interaction.guild.members.me.permissions.has(PermissionFlagsBits.KickMembers)) {
       return interaction.reply({ 
         content: 'I don\'t have permission to kick members!', 
+        ephemeral: true 
+      });
+    }
+    
+    // Also check for message management permission if days > 0
+    if (days > 0 && !interaction.guild.members.me.permissions.has(PermissionFlagsBits.ManageMessages)) {
+      return interaction.reply({ 
+        content: 'I don\'t have permission to delete messages! Either set days to 0 or give me the Manage Messages permission.', 
         ephemeral: true 
       });
     }
@@ -120,6 +135,41 @@ client.on('interactionCreate', async interaction => {
             // Continue with kick even if DM fails
           }
           
+          // If days > 0, try to delete messages from this user
+          if (days > 0) {
+            try {
+              // We'll need to iterate through channels to delete messages
+              // Note: This is a basic implementation and might not be as thorough as the ban command's built-in message deletion
+              const channels = interaction.guild.channels.cache.filter(ch => ch.isTextBased());
+              
+              const yesterday = new Date();
+              yesterday.setDate(yesterday.getDate() - days);
+              
+              for (const [, channel] of channels) {
+                try {
+                  // Bulk delete messages if possible
+                  const messages = await channel.messages.fetch({ limit: 100 });
+                  const userMessages = messages.filter(msg => 
+                    msg.author.id === member.id && msg.createdAt > yesterday
+                  );
+                  
+                  if (userMessages.size > 0) {
+                    // Delete messages - note this is limited by Discord API
+                    for (const [, msg] of userMessages) {
+                      await msg.delete().catch(() => {}); // Ignore errors for individual message deletions
+                    }
+                  }
+                } catch (channelError) {
+                  // Ignore errors for individual channels
+                  console.error(`Failed to delete messages in ${channel.name}: ${channelError}`);
+                }
+              }
+            } catch (deleteError) {
+              console.error(`Failed to delete messages for ${member.user.tag}: ${deleteError}`);
+              // Continue with kick even if message deletion fails
+            }
+          }
+          
           // Kick the member
           await member.kick(`${reason} - Executed by ${interaction.user.tag} using /rkick`);
           kickedCount++;
@@ -131,7 +181,7 @@ client.on('interactionCreate', async interaction => {
       
       // Update the reply with the results
       await interaction.editReply(
-        `Operation completed:\n- Kicked: ${kickedCount} members\n- Failed: ${failedCount} members\n- Reason: ${reason}`
+        `Operation completed:\n- Kicked: ${kickedCount} members\n- Failed: ${failedCount} members\n- Reason: ${reason}\n- Message deletion: ${days} days`
       );
     } catch (error) {
       console.error(`Error in /rkick command: ${error}`);
