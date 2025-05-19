@@ -126,7 +126,7 @@ client.on('interactionCreate', async interaction => {
   
   if (interaction.commandName === 'about') {
     const embed = new EmbedBuilder()
-      .setColor(0x0099FF)
+      .setColor(0xFF5500) // Changed color to orange/red
       .setTitle('About FlareBot')
       .setDescription(`This is a bot created by [darkflareplays8](https://discord.com/users/darkflarePlays8). It is fully coded in JavaScript and will always be free.`)
       .setThumbnail(client.user.displayAvatarURL())
