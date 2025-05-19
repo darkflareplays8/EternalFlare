@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 
 const token = process.env.DISCORD_TOKEN;
 const clientId = process.env.CLIENT_ID; // from environment variable
@@ -82,7 +82,11 @@ const commands = [
         .setMinValue(0)
         .setMaxValue(7)
         .setRequired(false))
-    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
+    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+    
+  new SlashCommandBuilder()
+    .setName('about')
+    .setDescription('Information about the bot and its creator')
 ].map(command => command.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(token);
@@ -118,6 +122,18 @@ client.on('interactionCreate', async interaction => {
 
   if (interaction.commandName === 'ping') {
     await interaction.reply('Pong!');
+  }
+  
+  if (interaction.commandName === 'about') {
+    const embed = new EmbedBuilder()
+      .setColor(0x0099FF)
+      .setTitle('About FlareBot')
+      .setDescription(`This is a bot created by [darkflarePlays8](https://discord.com/users/darkflarePlays8). It is fully coded in JavaScript and will always be free.`)
+      .setThumbnail(client.user.displayAvatarURL())
+      .setTimestamp()
+      .setFooter({ text: 'FlareBot Moderation', iconURL: client.user.displayAvatarURL() });
+    
+    await interaction.reply({ embeds: [embed] });
   }
   
   if (interaction.commandName === 'kick') {
