@@ -19,7 +19,26 @@ const commands = [
       option.setName('reason')
         .setDescription('The reason for kicking (will be DMed to users)')
         .setRequired(false))
-    .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers)
+    .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
+  
+  new SlashCommandBuilder()
+    .setName('rban')
+    .setDescription('Bans all members with a specific role')
+    .addRoleOption(option => 
+      option.setName('role')
+        .setDescription('The role to ban all members from')
+        .setRequired(true))
+    .addStringOption(option => 
+      option.setName('reason')
+        .setDescription('The reason for banning (will be DMed to users)')
+        .setRequired(false))
+    .addIntegerOption(option =>
+      option.setName('days')
+        .setDescription('Number of days of messages to delete (0-7)')
+        .setMinValue(0)
+        .setMaxValue(7)
+        .setRequired(false))
+    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
 ].map(command => command.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(token);
@@ -116,6 +135,73 @@ client.on('interactionCreate', async interaction => {
       );
     } catch (error) {
       console.error(`Error in /rkick command: ${error}`);
+      await interaction.editReply(`An error occurred while executing the command: ${error.message}`);
+    }
+  }
+  
+  if (interaction.commandName === 'rban') {
+    const role = interaction.options.getRole('role');
+    const reason = interaction.options.getString('reason') || 'No reason provided';
+    const days = interaction.options.getInteger('days') || 0;
+    
+    if (!interaction.guild.members.me.permissions.has(PermissionFlagsBits.BanMembers)) {
+      return interaction.reply({ 
+        content: 'I don\'t have permission to ban members!', 
+        ephemeral: true 
+      });
+    }
+    
+    await interaction.deferReply();
+    
+    try {
+      // Fetch all guild members to ensure the cache is up to date
+      await interaction.guild.members.fetch();
+      
+      const membersWithRole = interaction.guild.members.cache.filter(
+        member => member.roles.cache.has(role.id) && member.bannable
+      );
+      
+      if (membersWithRole.size === 0) {
+        return interaction.editReply(`No bannable members found with the role ${role.name}.`);
+      }
+      
+      let bannedCount = 0;
+      let failedCount = 0;
+      
+      // Send a confirmation message for large bans
+      if (membersWithRole.size > 5) {
+        await interaction.editReply(`Starting to ban ${membersWithRole.size} members with the role ${role.name}. This may take a while...`);
+      }
+      
+      // Process bans
+      for (const [, member] of membersWithRole) {
+        try {
+          // Try to DM the user first
+          try {
+            await member.send(`You have been banned from ${interaction.guild.name} for the following reason: ${reason}`);
+          } catch (dmError) {
+            console.error(`Failed to DM user ${member.user.tag}: ${dmError}`);
+            // Continue with ban even if DM fails
+          }
+          
+          // Ban the member
+          await member.ban({
+            deleteMessageDays: days,
+            reason: `${reason} - Executed by ${interaction.user.tag} using /rban`
+          });
+          bannedCount++;
+        } catch (banError) {
+          console.error(`Failed to ban ${member.user.tag}: ${banError}`);
+          failedCount++;
+        }
+      }
+      
+      // Update the reply with the results
+      await interaction.editReply(
+        `Operation completed:\n- Banned: ${bannedCount} members\n- Failed: ${failedCount} members\n- Reason: ${reason}\n- Message deletion: ${days} days`
+      );
+    } catch (error) {
+      console.error(`Error in /rban command: ${error}`);
       await interaction.editReply(`An error occurred while executing the command: ${error.message}`);
     }
   }
