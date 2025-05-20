@@ -1,3 +1,4 @@
+
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
 const banMessages = [
@@ -11,26 +12,54 @@ const banMessages = [
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('rban')
-    .setDescription('Ban a user with a random message')
-    .addUserOption(option => 
-      option.setName('user')
-        .setDescription('The user to ban')
+    .setDescription('Ban all members with a specific role')
+    .addRoleOption(option => 
+      option.setName('role')
+        .setDescription('The role whose members to ban')
         .setRequired(true))
+    .addStringOption(option =>
+      option.setName('reason')
+        .setDescription('Reason for the ban'))
+    .addStringOption(option =>
+      option.setName('dm_message')
+        .setDescription('Message to send to banned users'))
     .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
 
   async execute(interaction) {
-    const user = interaction.options.getUser('user');
+    const role = interaction.options.getRole('role');
+    const reason = interaction.options.getString('reason') || 'No reason provided';
+    const dmMessage = interaction.options.getString('dm_message');
     const randomMessage = banMessages[Math.floor(Math.random() * banMessages.length)];
 
     try {
-      await interaction.guild.members.ban(user);
+      const members = interaction.guild.members.cache.filter(member => member.roles.cache.has(role.id));
+      
       await interaction.reply({
-        content: `${randomMessage} ${user.tag} has been banned!`,
+        content: `Starting mass ban of ${members.size} members with role ${role.name}...`,
+        ephemeral: true
+      });
+
+      let banCount = 0;
+      for (const [, member] of members) {
+        if (dmMessage) {
+          try {
+            await member.send(dmMessage);
+          } catch (error) {
+            console.error(`Could not DM user ${member.user.tag}`);
+          }
+        }
+        
+        await member.ban({ reason });
+        banCount++;
+      }
+
+      await interaction.followUp({
+        content: `${randomMessage} Successfully banned ${banCount} members with role ${role.name}! Reason: ${reason}`,
         ephemeral: true
       });
     } catch (error) {
-      await interaction.reply({
-        content: `Failed to ban ${user.tag}. Make sure I have the right permissions.`,
+      await interaction.followUp({
+        content: `Failed to complete the mass ban. Make sure I have the right permissions.`,
         ephemeral: true
       });
     }
