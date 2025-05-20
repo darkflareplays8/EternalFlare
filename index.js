@@ -96,7 +96,7 @@ const commands = [
   .addStringOption(option =>
     option.setName('title')
       .setDescription('Title of the embed')
-      .setRequired(false))
+      .setRequired(true))
   .addStringOption(option =>
     option.setName('color')
       .setDescription('Hex color (e.g., #ff0000)')
