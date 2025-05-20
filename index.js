@@ -119,6 +119,10 @@ const commands = [
     .setDescription('Get the donate link of      FlareBot'),
 
   new SlashCommandBuilder()
+  .setName('help')
+  .setDescription('Get a list of all commands.'),
+  
+  new SlashCommandBuilder()
     .setName('about')
     .setDescription('Information about the bot and its creator'),
 
@@ -199,7 +203,7 @@ client.on('interactionCreate', async interaction => {
   if (interaction.commandName === 'embed') {
     const title = interaction.options.getString('title');
     const description = interaction.options.getString('description');
-    const color = interaction.options.getString('color') || '#FFA500';
+    const color = interaction.options.getString('color') || '#FF4500';
     const image = interaction.options.getString('image');
     const footer = interaction.options.getString('footer');
 
