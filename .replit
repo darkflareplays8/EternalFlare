@@ -4,7 +4,7 @@ modules = ["nodejs-20"]
 channel = "stable-24_05"
 
 [workflows]
-runButton = "Project"
+runButton = "Start Bot"
 
 [[workflows.workflow]]
 name = "Project"
@@ -35,6 +35,15 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm init -y && npm install discord.js express dotenv winston && node index.js"
+
+[[workflows.workflow]]
+name = "Start Bot"
+author = 42888127
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node index.js"
 
 [deployment]
 run = ["sh", "-c", "npm install dotenv discord.js express winston && cp .env.example .env && node index.js"]
