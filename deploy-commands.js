@@ -1,7 +1,44 @@
+console.log("🚀 Deploy script started");
+
+
 const { REST, Routes, SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 require('dotenv').config();
 
 const commands = [
+  new SlashCommandBuilder()
+  .setName('embed')
+  .setDescription('Send a custom embed message')
+  .addStringOption(option =>
+    option.setName('title')
+      .setDescription('Title of the embed')
+      .setRequired(false))
+  .addStringOption(option =>
+    option.setName('description')
+      .setDescription('Description/body of the embed')
+      .setRequired(true))
+  .addStringOption(option =>
+    option.setName('color')
+      .setDescription('Hex color (e.g., #ff0000)')
+      .setRequired(false))
+  .addStringOption(option =>
+    option.setName('image')
+      .setDescription('Image URL')
+      .setRequired(false))
+  .addStringOption(option =>
+    option.setName('footer')
+      .setDescription('Footer text')
+      .setRequired(false))
+
+
+  
+  new SlashCommandBuilder()
+    .setName('source')
+    .setDescription('Get the source code link of      FlareBot'),
+
+  new SlashCommandBuilder()
+  .setName('donate')
+  .setDescription('Get the donate link of      FlareBot'),
+  
   new SlashCommandBuilder()
     .setName('ping')
     .setDescription('Replies with Pong!'),
