@@ -170,7 +170,7 @@ client.on('interactionCreate', async interaction => {
       .setColor(color.replace('#', '')) // remove "#" if present
       .setFooter({ text: footer, iconURL: interaction.user.displayAvatarURL() });
 
-    if (title) embed.setTitle(title);
+    embed.setTitle(title);
     if (image) embed.setImage(image);
 
     embed.setTimestamp();
