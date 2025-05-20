@@ -124,6 +124,27 @@ const commands = [
     .setDescription('Information about the bot and its creator'),
 
   new SlashCommandBuilder()
+    .setName('reactionrole add')
+    .setDescription('Add reaction role to an existing message')
+    .addStringOption(option =>
+      option.setName('messageid')
+        .setDescription('The ID of the message to add reaction role to')
+        .setRequired(true))
+    .addRoleOption(option =>
+      option.setName('role')
+        .setDescription('The role to give')
+        .setRequired(true))
+    .addStringOption(option =>
+      option.setName('emoji')
+        .setDescription('The emoji to react with')
+        .setRequired(true))
+    .addChannelOption(option =>
+      option.setName('channel')
+        .setDescription('The channel where the message is located')
+        .setRequired(true))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
+  
+  new SlashCommandBuilder()
     .setName('reactionrole')
     .setDescription('Create a reaction role message')
     .addRoleOption(option =>

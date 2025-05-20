@@ -5,7 +5,7 @@ const clientId = process.env.CLIENT_ID; // from environment variable
 
 const commands = [
   new SlashCommandBuilder()
-    .setName('reactionroleadd')
+    .setName('reactionrole add')
     .setDescription('Add reaction role to an existing message')
     .addStringOption(option =>
       option.setName('messageid')
@@ -160,7 +160,7 @@ const commands = [
         .setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
     new SlashCommandBuilder()
-    .setName('reactionroleadd')
+    .setName('reactionrole add')
     .setDescription('Add reaction role to an existing message')
     .addStringOption(option =>
       option.setName('messageid')
@@ -656,7 +656,7 @@ client.on('interactionCreate', async interaction => {
     }
   }
 
-  if (interaction.commandName === 'reactionroleadd') {
+  if (interaction.commandName === 'reactionrole add') {
     const messageId = interaction.options.getString('messageid');
     const role = interaction.options.getRole('role');
     const emoji = interaction.options.getString('emoji');
