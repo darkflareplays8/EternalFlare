@@ -145,7 +145,8 @@ registerCommands();
 const client = new Client({ 
   intents: [
     GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers // SERVER MEMBERS INTENT is now enabled
+    GatewayIntentBits.GuildMembers, // SERVER MEMBERS INTENT is now enabled
+    GatewayIntentBits.GuildMessageReactions
   ] 
 });
 
