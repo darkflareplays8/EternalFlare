@@ -90,12 +90,12 @@ const commands = [
   .setName('embed')
   .setDescription('Send a custom embed message')
   .addStringOption(option =>
-    option.setName('description')
-      .setDescription('Description/body of the embed')
-      .setRequired(true))
-  .addStringOption(option =>
     option.setName('title')
       .setDescription('Title of the embed')
+      .setRequired(true))
+  .addStringOption(option =>
+    option.setName('description')
+      .setDescription('Description/body of the embed')
       .setRequired(true))
   .addStringOption(option =>
     option.setName('color')
