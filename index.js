@@ -168,12 +168,10 @@ client.on('interactionCreate', async interaction => {
     const embed = new EmbedBuilder()
       .setDescription(description)
       .setColor(color.replace('#', '')) // remove "#" if present
+      .setFooter({ text: footer, iconURL: interaction.user.displayAvatarURL() });
 
     if (title) embed.setTitle(title);
     if (image) embed.setImage(image);
-    if (footer) {
-      embed.setFooter({ text: footer, iconURL: interaction.user.displayAvatarURL() });
-    }
 
     embed.setTimestamp();
 

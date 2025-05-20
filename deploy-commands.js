@@ -27,7 +27,7 @@ const commands = [
   .addStringOption(option =>
     option.setName('footer')
       .setDescription('Footer text')
-      .setRequired(false))
+      .setRequired(true))
 
 
   
