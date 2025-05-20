@@ -36,8 +36,8 @@ const commands = [
     .setDescription('Get the source code link of      FlareBot'),
 
   new SlashCommandBuilder()
-  .setName('donate')
-  .setDescription('Get the donate link of      FlareBot'),
+    .setName('donate')
+    .setDescription('Get the donate link of      FlareBot'),
   
   new SlashCommandBuilder()
     .setName('ping')
