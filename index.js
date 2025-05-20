@@ -5,7 +5,7 @@ const clientId = process.env.CLIENT_ID; // from environment variable
 
 const commands = [
   new SlashCommandBuilder()
-    .setName('reactionrole add')
+    .setName('reactionrole-add')
     .setDescription('Add reaction role to an existing message')
     .addStringOption(option =>
       option.setName('messageid')
@@ -160,7 +160,7 @@ const commands = [
         .setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
     new SlashCommandBuilder()
-    .setName('reactionrole add')
+    .setName('reactionrole-add')
     .setDescription('Add reaction role to an existing message')
     .addStringOption(option =>
       option.setName('messageid')
@@ -464,14 +464,6 @@ client.on('interactionCreate', async interaction => {
       });
     }
 
-    // Also check for message management permission if days > 0
-    if (days > 0 && !interaction.guild.members.me.permissions.has(PermissionFlagsBits.ManageMessages)) {
-      return interaction.reply({ 
-        content: 'I don\'t have permission to delete messages! Either set days to 0 or give me the Manage Messages permission.', 
-        ephemeral: true 
-      });
-    }
-
     // Check role hierarchy
     const botMember = interaction.guild.members.me;
     const targetRole = role;
@@ -656,7 +648,7 @@ client.on('interactionCreate', async interaction => {
     }
   }
 
-  if (interaction.commandName === 'reactionrole add') {
+  if (interaction.commandName === 'reactionrole-add') {
     const messageId = interaction.options.getString('messageid');
     const role = interaction.options.getRole('role');
     const emoji = interaction.options.getString('emoji');

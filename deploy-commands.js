@@ -124,7 +124,7 @@ const commands = [
     .setDescription('Information about the bot and its creator'),
 
   new SlashCommandBuilder()
-    .setName('reactionrole add')
+    .setName('reactionrole-add')
     .setDescription('Add reaction role to an existing message')
     .addStringOption(option =>
       option.setName('messageid')
