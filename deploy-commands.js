@@ -121,7 +121,24 @@ const commands = [
     
   new SlashCommandBuilder()
     .setName('about')
-    .setDescription('Information about the bot and its creator')
+    .setDescription('Information about the bot and its creator'),
+
+  new SlashCommandBuilder()
+    .setName('reactionrole')
+    .setDescription('Create a reaction role message')
+    .addRoleOption(option =>
+      option.setName('role')
+        .setDescription('The role to give')
+        .setRequired(true))
+    .addStringOption(option =>
+      option.setName('message')
+        .setDescription('The message to display')
+        .setRequired(true))
+    .addStringOption(option =>
+      option.setName('emoji')
+        .setDescription('The emoji to react with')
+        .setRequired(true))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
 ].map(command => command.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);

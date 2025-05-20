@@ -219,6 +219,42 @@ client.on('interactionCreate', async interaction => {
     await interaction.reply({ embeds: [embed] });
   }
 
+  if (interaction.commandName === 'reactionrole') {
+    const role = interaction.options.getRole('role');
+    const messageText = interaction.options.getString('message');
+    const emoji = interaction.options.getString('emoji');
+
+    const embed = new EmbedBuilder()
+      .setColor(0x00ff00)
+      .setTitle('Reaction Role')
+      .setDescription(`${messageText}\n\nReact with ${emoji} to get the ${role} role!`);
+
+    const message = await interaction.reply({ embeds: [embed], fetchReply: true });
+    await message.react(emoji);
+
+    // Create reaction collector
+    const filter = (reaction, user) => reaction.emoji.name === emoji && !user.bot;
+    const collector = message.createReactionCollector({ filter });
+
+    collector.on('collect', async (reaction, user) => {
+      const member = await interaction.guild.members.fetch(user.id);
+      try {
+        await member.roles.add(role);
+      } catch (error) {
+        console.error(`Failed to add role: ${error}`);
+      }
+    });
+
+    collector.on('remove', async (reaction, user) => {
+      const member = await interaction.guild.members.fetch(user.id);
+      try {
+        await member.roles.remove(role);
+      } catch (error) {
+        console.error(`Failed to remove role: ${error}`);
+      }
+    });
+  }
+
   if (interaction.commandName === 'kick') {
     const user = interaction.options.getUser('user');
     const reason = interaction.options.getString('reason') || 'No reason provided';
