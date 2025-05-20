@@ -4,8 +4,8 @@ const token = process.env.DISCORD_TOKEN;
 const clientId = process.env.CLIENT_ID; // from environment variable
 
 const commands = [
-  
-  
+
+
   new SlashCommandBuilder()
     .setName('ping')
     .setDescription('Replies with Pong!'),
@@ -111,7 +111,7 @@ const commands = [
       .setRequired(false)),
 
 
-  
+
   new SlashCommandBuilder()
     .setName('source')
     .setDescription('Get the source code link of      FlareBot'),
@@ -119,11 +119,11 @@ const commands = [
   new SlashCommandBuilder()
     .setName('donate')
     .setDescription('Get the donate link of      FlareBot'),
-  
+
   new SlashCommandBuilder()
     .setName('about')
     .setDescription('Information about the bot and its creator'),
-    
+
   new SlashCommandBuilder()
     .setName('reactionrole')
     .setDescription('Create a reaction role message')
@@ -138,6 +138,26 @@ const commands = [
     .addStringOption(option =>
       option.setName('emoji')
         .setDescription('The emoji to react with')
+        .setRequired(true))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
+    new SlashCommandBuilder()
+    .setName('reactionroleadd')
+    .setDescription('Add reaction role to an existing message')
+    .addStringOption(option =>
+      option.setName('messageid')
+        .setDescription('The ID of the message to add reaction role to')
+        .setRequired(true))
+    .addRoleOption(option =>
+      option.setName('role')
+        .setDescription('The role to give')
+        .setRequired(true))
+    .addStringOption(option =>
+      option.setName('emoji')
+        .setDescription('The emoji to react with')
+        .setRequired(true))
+    .addChannelOption(option =>
+      option.setName('channel')
+        .setDescription('The channel where the message is located')
         .setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
 ].map(command => command.toJSON());
@@ -174,8 +194,8 @@ client.once('ready', () => {
 });
 
 client.on('interactionCreate', async interaction => {
-  
-  
+
+
   if (!interaction.isCommand()) return;
 
   if (interaction.commandName === 'embed') {
@@ -199,7 +219,7 @@ client.on('interactionCreate', async interaction => {
   }
 
 
-  
+
   if (interaction.commandName === 'source') {
     const embed = new EmbedBuilder()
       .setColor(0xFF4500)
@@ -222,7 +242,7 @@ client.on('interactionCreate', async interaction => {
     await interaction.reply({ embeds: [embed] });
   }
 
-  
+
   if (interaction.commandName === 'ping') {
     await interaction.reply('Pong!');
   }
@@ -616,7 +636,58 @@ client.on('interactionCreate', async interaction => {
       await interaction.editReply(`An error occurred while executing the command: ${error.message}`);
     }
   }
+
+  if (interaction.commandName === 'reactionroleadd') {
+    const messageId = interaction.options.getString('messageid');
+    const role = interaction.options.getRole('role');
+    const emoji = interaction.options.getString('emoji');
+    const channel = interaction.options.getChannel('channel');
+
+    try {
+      const targetMessage = await channel.messages.fetch(messageId);
+      if (!targetMessage) {
+        return interaction.reply({
+          content: 'Could not find the specified message.',
+          ephemeral: true
+        });
+      }
+
+      await targetMessage.react(emoji);
+
+      // Create reaction collector
+      const filter = (reaction, user) => reaction.emoji.name === emoji && !user.bot;
+      const collector = targetMessage.createReactionCollector({ filter });
+
+      collector.on('collect', async (reaction, user) => {
+        const member = await interaction.guild.members.fetch(user.id);
+        try {
+          await member.roles.add(role);
+        } catch (error) {
+          console.error(`Failed to add role: ${error}`);
+        }
+      });
+
+      collector.on('remove', async (reaction, user) => {
+        const member = await interaction.guild.members.fetch(user.id);
+        try {
+          await member.roles.remove(role);
+        } catch (error) {
+          console.error(`Failed to remove role: ${error}`);
+        }
+      });
+
+      await interaction.reply({
+        content: `Successfully added reaction role to the message. React with ${emoji} to get the ${role} role!`,
+        ephemeral: true
+      });
+    } catch (error) {
+      console.error(error);
+      await interaction.reply({
+        content: 'Failed to add reaction role to the message. Make sure the message ID and channel are correct.',
+        ephemeral: true
+      });
+    }
+  }
 });
 
 client.login(token);
-
