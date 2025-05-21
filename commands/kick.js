@@ -4,7 +4,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('kick')
     .setDescription('Kick a user from the server')
-    .addUserOption(option => 
+    .addUserOption(option =>
       option.setName('user')
         .setDescription('The user to kick')
         .setRequired(true))
@@ -18,15 +18,18 @@ module.exports = {
     const reason = interaction.options.getString('reason') || 'No reason provided';
 
     try {
-      await interaction.guild.members.kick(user, reason);
+      const member = await interaction.guild.members.fetch(user.id);
+      await member.kick(reason);
+
       await interaction.reply({
-        content: `Successfully kicked ${user.tag} for: ${reason}`,
-        ephemeral: true
+        content: `✅ Successfully kicked **${user.tag}** for: ${reason}`,
+        flags: 64 // Ephemeral response
       });
     } catch (error) {
+      console.error(error);
       await interaction.reply({
-        content: `Failed to kick ${user.tag}. Make sure I have the right permissions.`,
-        ephemeral: true
+        content: `❌ Failed to kick **${user.tag}**. Make sure I have permission and the user is in this server.`,
+        flags: 64
       });
     }
   }

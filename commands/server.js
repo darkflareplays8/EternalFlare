@@ -2,14 +2,14 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('source')
-    .setDescription('Get the source code of the bot'),
+    .setName('server')
+    .setDescription('Get a link to join the official discord server'),
 
   async execute(interaction) {
     const embed = new EmbedBuilder()
       .setColor('#FF4500')
-      .setTitle('EternalFlare Source Code')
-      .setDescription('This bot is open source! You can find the code by clicking [here](https://replit.com/@saimuralibalmur/EternalFlareBot?v=1).');
+      .setTitle('DarkFlare Inc Invite')
+      .setDescription('Click [here](https://discord.gg/4wEmCnDDgN) to join the official discord server.');
 
     await interaction.reply({ embeds: [embed] });
   }

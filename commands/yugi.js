@@ -1,15 +1,16 @@
+
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('source')
-    .setDescription('Get the source code of the bot'),
+    .setName('yugi')
+    .setDescription('Show my opinion of yugi. (not yu-gioh)'),
 
   async execute(interaction) {
     const embed = new EmbedBuilder()
       .setColor('#FF4500')
-      .setTitle('EternalFlare Source Code')
-      .setDescription('This bot is open source! You can find the code by clicking [here](https://replit.com/@saimuralibalmur/EternalFlareBot?v=1).');
+      .setTitle('Yugi Opinion')
+      .setDescription('Yugi is bad. (not yu-gioh) Baxel is good.');
 
     await interaction.reply({ embeds: [embed] });
   }

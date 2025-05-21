@@ -39,11 +39,33 @@ args = "npm init -y && npm install discord.js express dotenv winston && node ind
 [[workflows.workflow]]
 name = "Start Bot"
 author = 42888127
-mode = "sequential"
+mode = "parallel"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node deploy-commands.js"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node index.js"
 
+[[workflows.workflow]]
+name = "send commands to discrodbotlist"
+mode = "sequential"
+author = 42888127
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node postcommands.js"
+
+[[workflows.workflow]]
+name = "npm i ms"
+mode = "sequential"
+author = 42888127
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm i ms"
+
 [deployment]
-run = ["sh", "-c", "npm install dotenv discord.js express winston && cp .env.example .env && node index.js"]
+run = ["sh", "-c", "npm install dotenv discord.js express winston && cp .env.example .env && node deploy-commands.js && node index.js"]
