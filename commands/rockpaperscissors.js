@@ -57,11 +57,11 @@ async function startGame(challenger, opponent, rounds, challengeId, client, chan
       summary += `Winner: **${winner.tag}**`;
     }
 
-    // Send summary to both players' DMs (optional, you can keep or remove)
+    // Send summary DM to both players
     await challenger.send(summary);
     await opponent.send(summary);
 
-    // NEW: Announce round result publicly in original channel
+    // Announce round result publicly in the original channel
     await channel.send(summary);
   }
 
@@ -73,10 +73,11 @@ async function startGame(challenger, opponent, rounds, challengeId, client, chan
       ? `${opponent.tag} wins the match!`
       : 'The match is a draw!';
 
+  // Send final score DMs to both players
   await challenger.send(`**Final Score**: ${challenger.tag} ${finalScores[challenger.id]} - ${finalScores[opponent.id]} ${opponent.tag}\n${finalResult}`);
   await opponent.send(`**Final Score**: ${challenger.tag} ${finalScores[challenger.id]} - ${finalScores[opponent.id]} ${opponent.tag}\n${finalResult}`);
 
-  // Also announce final result publicly
+  // Announce final score publicly in the original channel
   await channel.send(`**Final Score**: ${challenger.tag} ${finalScores[challenger.id]} - ${finalScores[opponent.id]} ${opponent.tag}\n${finalResult}`);
 
   activeGames.delete(challengeId);
