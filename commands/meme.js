@@ -29,7 +29,7 @@ module.exports = {
         .setTitle(`Random Meme:`)
         .setURL(meme.postLink)
         .setImage(meme.url)
-        .setColor(0x00AEFF)
+        .setColor(0xff4500)
         .setFooter({ text: 'EternalFlare • Memes ' });
 
       await interaction.editReply({ embeds: [embed] });
