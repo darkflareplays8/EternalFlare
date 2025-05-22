@@ -14,11 +14,11 @@ module.exports = {
       const meme = await response.json();
 
       const embed = new EmbedBuilder()
-        .setTitle(meme.title)
+        .setTitle("Your meme:")
         .setURL(meme.postLink)
         .setImage(meme.url)
         .setColor(0xff9900)
-        .setFooter({ text: `From r/${meme.subreddit}` });
+        .setFooter("EternalFlare Discord);
 
       await interaction.editReply({ embeds: [embed] });
 
