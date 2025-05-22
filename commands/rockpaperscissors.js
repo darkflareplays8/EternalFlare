@@ -1,5 +1,98 @@
+const {
+  SlashCommandBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  EmbedBuilder,
+  ComponentType,
+} = require('discord.js');
+
+const activeGames = new Map();
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('rockpaperscissors')
+    .setDescription('Challenge someone to a Rock Paper Scissors game!')
+    .addUserOption(option =>
+      option.setName('user')
+        .setDescription('The person you want to challenge')
+        .setRequired(true)
+    )
+    .addIntegerOption(option =>
+      option.setName('rounds')
+        .setDescription('Number of rounds (max 5)')
+        .setRequired(true)
+        .setMinValue(1)
+        .setMaxValue(5)
+    ),
+
+  async execute(interaction) {
+    await interaction.deferReply(); // defer immediately to avoid timeout
+
+    const challenger = interaction.user;
+    const opponent = interaction.options.getUser('user');
+    const rounds = interaction.options.getInteger('rounds');
+
+    if (challenger.id === opponent.id) {
+      return interaction.editReply({ content: 'You cannot challenge yourself!', ephemeral: true });
+    }
+
+    const challengeId = `${challenger.id}_${opponent.id}`;
+    if (activeGames.has(challengeId)) {
+      return interaction.editReply({ content: 'A game is already active between you two.', ephemeral: true });
+    }
+
+    const acceptButton = new ButtonBuilder()
+      .setCustomId(`rps_accept_${challengeId}`)
+      .setLabel('Accept')
+      .setStyle(ButtonStyle.Success);
+
+    const row = new ActionRowBuilder().addComponents(acceptButton);
+
+    const embed = new EmbedBuilder()
+      .setTitle('Rock Paper Scissors Challenge!')
+      .setDescription(`${opponent}, you have been challenged by ${challenger} for ${rounds} round(s)!`)
+      .setColor(0xFF4500);
+
+    await interaction.editReply({ embeds: [embed], components: [row] });
+
+    const message = await interaction.fetchReply();
+
+    const collector = message.createMessageComponentCollector({
+      componentType: ComponentType.Button,
+      time: 60_000,
+    });
+
+    collector.on('collect', async i => {
+      if (i.user.id !== opponent.id) {
+        return i.reply({ content: 'Only the challenged user can accept!', flags: 64 });
+      }
+
+      collector.stop();
+      activeGames.set(challengeId, { round: 0, maxRounds: rounds, scores: { [challenger.id]: 0, [opponent.id]: 0 } });
+
+      await i.update({
+        content: `${opponent.tag} accepted the challenge! Check your DMs to play.`,
+        embeds: [],
+        components: [],
+      });
+
+      await startGame(challenger, opponent, rounds, challengeId, interaction.client, interaction.channel);
+    });
+
+    collector.on('end', collected => {
+      if (collected.size === 0) {
+        interaction.editReply({
+          content: 'Challenge expired. No response received.',
+          embeds: [],
+          components: [],
+        });
+      }
+    });
+  },
+};
+
 async function startGame(challenger, opponent, rounds, challengeId, client, channel) {
-  const moves = ['rock', 'paper', 'scissors'];
   const buttons = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId('rock').setLabel('🪨 Rock').setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId('paper').setLabel('📄 Paper').setStyle(ButtonStyle.Primary),
@@ -57,11 +150,11 @@ async function startGame(challenger, opponent, rounds, challengeId, client, chan
       summary += `Winner: **${winner.tag}**`;
     }
 
-    // Send summary DM to both players
+    // DM both players
     await challenger.send(summary);
     await opponent.send(summary);
 
-    // Announce round result publicly in the original channel
+    // Announce publicly in the original channel
     await channel.send(summary);
   }
 
@@ -73,12 +166,23 @@ async function startGame(challenger, opponent, rounds, challengeId, client, chan
       ? `${opponent.tag} wins the match!`
       : 'The match is a draw!';
 
-  // Send final score DMs to both players
-  await challenger.send(`**Final Score**: ${challenger.tag} ${finalScores[challenger.id]} - ${finalScores[opponent.id]} ${opponent.tag}\n${finalResult}`);
-  await opponent.send(`**Final Score**: ${challenger.tag} ${finalScores[challenger.id]} - ${finalScores[opponent.id]} ${opponent.tag}\n${finalResult}`);
+  const finalSummary = `**Final Score**: ${challenger.tag} ${finalScores[challenger.id]} - ${finalScores[opponent.id]} ${opponent.tag}\n${finalResult}`;
 
-  // Announce final score publicly in the original channel
-  await channel.send(`**Final Score**: ${challenger.tag} ${finalScores[challenger.id]} - ${finalScores[opponent.id]} ${opponent.tag}\n${finalResult}`);
+  await challenger.send(finalSummary);
+  await opponent.send(finalSummary);
+  await channel.send(finalSummary);
 
   activeGames.delete(challengeId);
+}
+
+function getRoundResult(move1, move2) {
+  if (move1 === move2 || move1 === 'none' || move2 === 'none') return 'draw';
+
+  const winMap = {
+    rock: 'scissors',
+    paper: 'rock',
+    scissors: 'paper',
+  };
+
+  return winMap[move1] === move2 ? 'challenger' : 'opponent';
 }
