@@ -9,7 +9,7 @@ module.exports = {
     const embed = new EmbedBuilder()
       .setTitle('License Information')
       .setDescription(
-        `This bot is licensed under the MIT License.\n[Click here to view the full license](https://opensource.org/licenses/MIT)`
+        `This bot is licensed under the MIT License.\nClick [here](https://github.com/darkflareplays8/EternalFlare/blob/main/LICENSE) to view the full license`
       )
       .setColor('#FF4500')
       .setTimestamp()
