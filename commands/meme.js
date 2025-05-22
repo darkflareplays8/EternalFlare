@@ -17,7 +17,7 @@ module.exports = {
         .setTitle("Your meme:")
         .setURL(meme.postLink)
         .setImage(meme.url)
-        .setColor(#FF4500)
+        .setColor(0xff4500)
         .setFooter({ text: "EternalFlare Discord" });
 
       await interaction.editReply({ embeds: [embed] });
