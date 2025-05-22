@@ -2,7 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const fetch = require('node-fetch');
 
 const subreddits = [
-  'funny',
+  'funny'
   
 ];
 
