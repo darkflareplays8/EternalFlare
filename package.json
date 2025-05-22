@@ -5,6 +5,7 @@
   "scripts": {
   "start": "node index.js",
   "deploy": "node deploy-commands.js"
+  "post": "node post-commands.js"
 },
 
   "dependencies": {
