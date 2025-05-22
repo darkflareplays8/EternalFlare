@@ -9,7 +9,7 @@ module.exports = {
     const embed = new EmbedBuilder()
       .setColor('#FF4500')
       .setTitle('Support EternalFlare')
-      .setDescription('If you enjoy using this bot and want to get it online 24/7, \n consider supporting its development! \n You can donate by clicking [here](https://ko-fi.com/darkflareplays8).');
+      .setDescription('If you enjoy using this bot, \n consider supporting its development! \n You can donate by clicking [here](https://ko-fi.com/darkflareplays8).');
 
     await interaction.reply({ embeds: [embed] });
   }
