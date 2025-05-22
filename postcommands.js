@@ -1,3 +1,5 @@
+const fetch = require('node-fetch');
+
 const BOT_ID = process.env.BOT_ID;
 const API_TOKEN = process.env.API_TOKEN;
 
@@ -19,12 +21,18 @@ const commandsPayload = [
   { name: "8ball", description: "Show my opinion of yugi. (not yu-gioh)" },
   { name: "number", description: "Generate a random number between two values" },
   { name: "server", description: "Get a link to join the official discord server" },
-  {name: "timeout", description: "Timeout a user for a specified duration" },
-  { name: "untimeout", description: "Remove timeout from a user"}
-
+  { name: "timeout", description: "Timeout a user for a specified duration" },
+  { name: "untimeout", description: "Remove timeout from a user" }
 ];
 
-async function postCommands() {
+module.exports = async function postCommands() {
+  if (!BOT_ID || !API_TOKEN) {
+    console.error("[ERROR] BOT_ID or API_TOKEN not set in environment variables.");
+    return;
+  }
+
+  console.log("[INFO] Posting commands to Discord Bot List...");
+
   try {
     const res = await fetch(`https://discordbotlist.com/api/v1/bots/${BOT_ID}/commands`, {
       method: 'POST',
@@ -36,18 +44,15 @@ async function postCommands() {
     });
 
     if (!res.ok) {
-      console.error(`Failed to post commands: ${res.status} ${res.statusText}`);
       const errorText = await res.text();
-      console.error(errorText);
+      console.error(`[ERROR] Failed to post commands: ${res.status} ${res.statusText}`);
+      console.error(`[DETAILS] ${errorText}`);
       return;
     }
 
     const data = await res.json();
-    console.log('Successfully posted commands:', data);
+    console.log("[SUCCESS] Commands posted successfully:", data);
   } catch (error) {
-    console.error('Error posting commands:', error);
+    console.error("[ERROR] Exception while posting commands:", error);
   }
-}
-
-postCommands();
-process.stdin.resume();  // Keeps the script running so you can read output
+};
