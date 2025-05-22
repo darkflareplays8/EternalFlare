@@ -3,7 +3,7 @@ const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require("disc
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("embed")
-    .setDescription("Send a custom embed message")
+    .setDescription("Send a custom embed message.")
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .addStringOption((option) =>
       option.setName("title").setDescription("Title of the embed").setRequired(true)
