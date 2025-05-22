@@ -2,12 +2,9 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const fetch = require('node-fetch');
 
 const subreddits = [
-  'wholesomememes',
   'cleanmemes',
   'funny',
-  'aww',
-  'meow_irl',
-  'dogpictures'
+  
 ];
 
 module.exports = {
@@ -29,7 +26,7 @@ module.exports = {
       }
 
       const embed = new EmbedBuilder()
-        .setTitle(`From r/${subreddit}`)
+        .setTitle(`Random Meme:`)
         .setURL(meme.postLink)
         .setImage(meme.url)
         .setColor(0x00AEFF)
