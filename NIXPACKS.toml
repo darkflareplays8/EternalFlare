@@ -1,8 +1,11 @@
 [phases.setup]
 nixPkgs = ["nodejs"]
 
-[phases.build]
+[phases.install]
 cmds = ["npm ci"]
+
+[phases.build]
+cmds = []  # <-- nothing runs during build!
 
 [start]
 cmd = "npm start"
