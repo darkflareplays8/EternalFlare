@@ -11,9 +11,8 @@ module.exports = {
       .setDescription(
         `This is a JavaScript-made bot created solely by darkflareplays8.\n` +
         `To invite it to your own server, run /invite.\n` +
-        `To get a command list, run /help.\n` +
-        `This bot is hosted on a replit free plan.\n` +
-        `To support and maybe let me buy 24/7 online hosting, run /donate.\n`
+        `To get a command list, run /help.\n` 
+        `To support and help me continue maintaining this bot, run /donate.\n`
         
       )
       .setColor('#FF4500')
