@@ -5,7 +5,7 @@ nixPkgs = ["nodejs"]
 cmds = ["npm ci"]
 
 [phases.build]
-cmds = []  # <-- nothing runs during build!
+cmds = []  # <--- DO NOT run node index.js here
 
 [start]
-cmd = "npm start"
+cmd = "node index.js"  # <--- Start the bot here
