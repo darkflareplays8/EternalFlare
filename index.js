@@ -5,21 +5,30 @@ const path = require('node:path');
 const token = process.env.DISCORD_TOKEN;
 
 async function runDeployCommands() {
-  console.log("RUN_DEPLOY_COMMAND is true, running deploy-commands.js...");
+  console.log("[INFO] Running deploy-commands.js...");
   try {
     await require('./deploy-commands.js')();
-    console.log("Deploy commands completed, exiting.");
-    process.exit(0);
+    console.log("[SUCCESS] Deploy commands completed.");
   } catch (error) {
-    console.error("Error running deploy-commands.js:", error);
+    console.error("[ERROR] Failed to run deploy-commands.js:", error);
     process.exit(1);
   }
 }
 
-if (process.env.RUN_DEPLOY_COMMAND === 'true') {
-  runDeployCommands();
-} else {
-  // Normal bot startup
+async function runPostCommands() {
+  console.log("[INFO] Running post-commands.js...");
+  try {
+    await require('./post-commands.js')();
+    console.log("[SUCCESS] Post commands completed.");
+  } catch (error) {
+    console.error("[ERROR] Failed to run post-commands.js:", error);
+    process.exit(1);
+  }
+}
+
+async function startBot() {
+  console.log("[INFO] Starting bot...");
+
   const client = new Client({
     intents: [
       GatewayIntentBits.Guilds,
@@ -44,11 +53,14 @@ if (process.env.RUN_DEPLOY_COMMAND === 'true') {
     const command = require(filePath);
     if ('data' in command && 'execute' in command) {
       client.commands.set(command.data.name, command);
+      console.log(`[INFO] Loaded command: ${command.data.name}`);
+    } else {
+      console.warn(`[WARN] Skipped command file: ${file}`);
     }
   }
 
   client.once('ready', () => {
-    console.log(`Logged in as ${client.user.tag}!`);
+    console.log(`[SUCCESS] Logged in as ${client.user.tag}!`);
   });
 
   client.on('interactionCreate', async interaction => {
@@ -59,14 +71,34 @@ if (process.env.RUN_DEPLOY_COMMAND === 'true') {
     try {
       await command.execute(interaction);
     } catch (error) {
-      console.error(error);
+      console.error(`[ERROR] Error executing command "${interaction.commandName}":`, error);
+      const replyPayload = { content: 'There was an error while executing that command!', flags: 64 };
       if (interaction.replied || interaction.deferred) {
-        await interaction.followUp({ content: 'There was an error while executing this command!', flags: 64 });
+        await interaction.followUp(replyPayload);
       } else {
-        await interaction.reply({ content: 'There was an error while executing this command!', flags: 64 });
+        await interaction.reply(replyPayload);
       }
     }
   });
 
-  client.login(token);
+  client.login(token).catch(err => {
+    console.error("[ERROR] Login failed:", err);
+    process.exit(1);
+  });
 }
+
+async function main() {
+  console.log("[INFO] Starting main process...");
+  if (process.env.RUN_DEPLOY_COMMAND === 'true') {
+    console.log("[INFO] RUN_DEPLOY_COMMAND=true. Running deploy commands only and then exiting...");
+    await runDeployCommands();
+    process.exit(0);
+  } else {
+    // Run deploy and post commands before starting bot
+    await runDeployCommands();
+    await runPostCommands();
+    await startBot();
+  }
+}
+
+main();
