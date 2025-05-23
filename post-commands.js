@@ -16,8 +16,8 @@ const commandsPayload = [
 { name: "coinflip", description: "Flip a coin and get heads or tails" },
 { name: "dice", description: "Roll a dice with an optional range (default 1-6)" },
 { name: "number", description: "Generate a random number between two values" },
-{ name: "yugi", description: "Ask the magic 8-ball a question" },
-{ name: "8ball", description: "Show my opinion of yugi. (not yu-gioh)" },
+{ name: "yugi", description: "Show my opinion of yugi. (not yu-gioh)" },
+{ name: "8ball", description: "Ask the magic 8-ball a question" },
 { name: "rockpaperscissors", description: "Challenge someone to a rockpaperscissors game!" },
 
 // 📚 Info & Utility
@@ -27,7 +27,7 @@ const commandsPayload = [
 { name: "invite", description: "Get link to invite the EternalFlare bot to your server" },
 { name: "server", description: "Get a link to join the official discord server" },
 { name: "source", description: "Get the source code of the bot" },
-
+{ name: "license", description: "Get a link to the bot's license"
 // 🧰 Extras
 { name: "donate", description: "Get information about supporting the bot" },
 { name: "embed", description: "Send a custom embed message" }
