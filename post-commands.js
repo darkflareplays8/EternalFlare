@@ -27,7 +27,7 @@ const commandsPayload = [
 { name: "invite", description: "Get link to invite the EternalFlare bot to your server" },
 { name: "server", description: "Get a link to join the official discord server" },
 { name: "source", description: "Get the source code of the bot" },
-{ name: "license", description: "Get a link to the bot's license"
+{ name: "license", description: "Get a link to the bot's license" },
 // 🧰 Extras
 { name: "donate", description: "Get information about supporting the bot" },
 { name: "embed", description: "Send a custom embed message" }
