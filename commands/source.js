@@ -9,7 +9,7 @@ module.exports = {
     const embed = new EmbedBuilder()
       .setColor('#FF4500')
       .setTitle('EternalFlare Source Code')
-      .setDescription('This bot is open source! You can find the code by clicking [here](https://replit.com/@saimuralibalmur/EternalFlareBot?v=1).');
+      .setDescription('This bot is open source! You can find the code by clicking [here](https://github.com/DarkFlare-Inc/EternalFlare).');
 
     await interaction.reply({ embeds: [embed] });
   }
