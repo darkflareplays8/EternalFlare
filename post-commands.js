@@ -11,7 +11,9 @@ const commandsPayload = [
 { name: "untimeout", description: "Remove timeout from a user" },
 { name: "rban", description: "Ban all members with a specified role" },
 { name: "rkick", description: "Kick all members with a specified role" },
-
+{ name: "rall", description: "Gives a role to all server members" },
+{ name: "rremoveall", description: "Removes a role from all server members" },
+{ name: "rrole", description: "Gives a role to all members with a specific role" },  
 // 🎮 Fun & Games
 { name: "coinflip", description: "Flip a coin and get heads or tails" },
 { name: "dice", description: "Roll a dice with an optional range (default 1-6)" },
