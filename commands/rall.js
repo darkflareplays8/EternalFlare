@@ -1,46 +1,38 @@
-const { ApplicationCommandOptionType, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
+const { PermissionFlagsBits } = require('discord-api-types/v10');
 
 module.exports = {
-  name: 'rall',
-  description: 'Give a role to all server members',
-  options: [
-    {
-      name: 'role',
-      description: 'The role to assign to all members',
-      type: ApplicationCommandOptionType.Role,
-      required: true,
-    },
-  ],
-  default_member_permissions: PermissionFlagsBits.ManageRoles,
-  run: async (client, interaction) => {
+  data: new SlashCommandBuilder()
+    .setName('rall')
+    .setDescription('Gives a role to all server members')
+    .addRoleOption(option =>
+      option.setName('role')
+        .setDescription('The role to give to all members')
+        .setRequired(true))
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // Optional: restrict to admins
+  async execute(interaction) {
+    await interaction.reply({ content: 'Giving everyone the role...', flags: 64 });
+
     const role = interaction.options.getRole('role');
+    const guild = interaction.guild;
 
-    if (!interaction.guild.members.me.permissions.has(PermissionFlagsBits.ManageRoles)) {
-      return interaction.reply({
-        content: 'I do not have permission to manage roles.',
-        flags: 64,
-      });
-    }
+    const members = await guild.members.fetch(); // Fetch all members
 
-    await interaction.reply({ content: `Assigning **${role.name}** to all members...`, flags: 64 });
-
-    const members = await interaction.guild.members.fetch();
-    let success = 0;
-    let failed = 0;
-
-    for (const member of members.values()) {
-      if (member.user.bot || member.roles.cache.has(role.id)) continue;
-      try {
-        await member.roles.add(role);
-        success++;
-      } catch {
-        failed++;
+    let given = 0;
+    for (const [, member] of members) {
+      if (!member.roles.cache.has(role.id)) {
+        try {
+          await member.roles.add(role);
+          given++;
+        } catch (e) {
+          console.error(`Failed to give role to ${member.user.tag}:`, e.message);
+        }
       }
     }
 
-    interaction.followUp({
-      content: `✅ Done! Gave the role to ${success} member(s).\n❌ Failed for ${failed} member(s).`,
-      flags: 64,
+    await interaction.editReply({
+      content: `✅ Done. Gave the role **${role.name}** to ${given} members.`,
+      flags: 64
     });
-  },
+  }
 };
