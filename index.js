@@ -42,8 +42,23 @@ console.log("[INFO] Starting main process...");
   }
 
   client.once('ready', () => {
-    console.log(`✅ Logged in as ${client.user.tag}!`);
-  });
+  console.log(`✅ Logged in as ${client.user.tag}!`);
+
+  const activities = [
+    { name: '/help', type: 'WATCHING' },
+    { name: 'with fire', type: 'PLAYING' }
+  ];
+
+  let i = 0;
+  setInterval(() => {
+    const activity = activities[i % activities.length];
+    client.user.setPresence({
+      activities: [activity],
+      status: 'online',
+    });
+    i++;
+  }, 10000); // every 10 seconds
+});
 
   client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
