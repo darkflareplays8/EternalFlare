@@ -1,16 +1,14 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
+
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Parse JSON bodies
 app.use(express.json());
 
-// Webhook route
 app.post('/dblwebhook', async (req, res) => {
   const userId = req.body.user;
-
-  if (!userId) return res.sendStatus(400); // Bad request if user missing
+  if (!userId) return res.sendStatus(400);
 
   try {
     const connection = await mysql.createConnection({
@@ -23,12 +21,12 @@ app.post('/dblwebhook', async (req, res) => {
     await connection.execute(
       `INSERT INTO currency (user_id, flares)
        VALUES (?, 100)
-       ON DUPLICATE KEY UPDATE flares = flares + 6000`,
+       ON DUPLICATE KEY UPDATE flares = flares + 5000`,
       [userId]
     );
 
     await connection.end();
-    console.log(`✅ ${userId} voted and received 100 flares!`);
+    console.log(`✅ ${userId} voted and received 5000 flares!`);
     res.sendStatus(200);
   } catch (err) {
     console.error('❌ Error handling vote:', err);
@@ -36,7 +34,8 @@ app.post('/dblwebhook', async (req, res) => {
   }
 });
 
-// Start listening on Railway-provided port
 app.listen(port, '0.0.0.0', () => {
-  console.log(`Webhook server running on port ${port}`);
+  console.log(`[INFO] Webhook server running on port ${port}`);
 });
+
+module.exports = app;
