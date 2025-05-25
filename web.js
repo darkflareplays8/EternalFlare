@@ -6,10 +6,10 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
-app.post('/dblwebhook', async (req, res) => {
-  const userId = req.body.user;
-  if (!userId) return res.sendStatus(400);
-
+app.post('/dblwebhook', (req, res) => {
+  if (req.headers.authorization !== process.env.API_TOKEN) {
+    return res.sendStatus(401);
+  }
   try {
     const connection = await mysql.createConnection({
       host: process.env.MYSQLHOST,
