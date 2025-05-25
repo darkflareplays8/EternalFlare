@@ -37,9 +37,9 @@ module.exports = {
     }
 
     const embed = new EmbedBuilder()
-      .setTitle('🔥 Flares 🔥')
+      .setTitle('Flare 🔥 Balance')
       .setColor('#FF4500')
-      .setDescription(`🔥 ${targetUser.username} has **${flares.toLocaleString()}** flares 🔥`)
+      .setDescription(` ${targetUser.username} has **${flares.toLocaleString()}** flares. 🔥`)
       .setTimestamp();
 
     await interaction.reply({
