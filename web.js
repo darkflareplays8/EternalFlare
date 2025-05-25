@@ -1,16 +1,42 @@
 const express = require('express');
+const mysql = require('mysql2/promise');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Parse JSON bodies (as sent by webhook)
+// Parse JSON bodies
 app.use(express.json());
 
-// Vote webhook route (DiscordBotList.com)
-app.post('/dblwebhook', (req, res) => {
-  console.log('Vote received!', req.body);
-  res.sendStatus(200); // Respond to the site
+// Webhook route
+app.post('/dblwebhook', async (req, res) => {
+  const userId = req.body.user;
+
+  if (!userId) return res.sendStatus(400); // Bad request if user missing
+
+  try {
+    const connection = await mysql.createConnection({
+      host: process.env.MYSQLHOST,
+      user: process.env.MYSQLUSER,
+      password: process.env.MYSQLPASSWORD,
+      database: process.env.MYSQL_DATABASE,
+    });
+
+    await connection.execute(
+      `INSERT INTO currency (user_id, flares)
+       VALUES (?, 100)
+       ON DUPLICATE KEY UPDATE flares = flares + 6000`,
+      [userId]
+    );
+
+    await connection.end();
+    console.log(`✅ ${userId} voted and received 100 flares!`);
+    res.sendStatus(200);
+  } catch (err) {
+    console.error('❌ Error handling vote:', err);
+    res.sendStatus(500);
+  }
 });
 
+// Start listening on Railway-provided port
 app.listen(port, '0.0.0.0', () => {
-  console.log(`Webhook server listening on port ${port}`);
+  console.log(`Webhook server running on port ${port}`);
 });
