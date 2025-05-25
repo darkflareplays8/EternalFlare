@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const mysql = require('mysql2/promise');
 
 module.exports = {
@@ -29,17 +29,24 @@ module.exports = {
     );
 
     let flares = 0;
+    let hasRecord = false;
     if (rows.length > 0) {
       flares = rows[0].flares;
+      hasRecord = true;
     }
 
-    const replyText =
-      targetUser.id === interaction.user.id
-        ? `🔥 You have **${flares.toLocaleString()}** flares.`
-        : `🔥 ${targetUser.username} has **${flares.toLocaleString()}** flares.`;
+    const embed = new EmbedBuilder()
+      .setAuthor({ name: `${targetUser.username}'s Balance`, iconURL: targetUser.displayAvatarURL() })
+      .setColor('#FF4500')
+      .addFields({
+        name: '🔥 Flares',
+        value: hasRecord ? `**${flares.toLocaleString()}**` : '*No record found*',
+        inline: true
+      })
+      .setTimestamp();
 
     await interaction.reply({
-      content: replyText,
+      embeds: [embed],
       flags: 64
     });
 
