@@ -1,12 +1,52 @@
 const { Client, GatewayIntentBits, Collection, Partials } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
+const express = require('express');
+const mysql = require('mysql2/promise');
 
+// Load environment variables
 const token = process.env.DISCORD_TOKEN;
+const port = process.env.PORT || 3000;
 
 console.log("[INFO] Starting main process...");
 
-// Run deploy-commands.js and post-commands.js before starting the bot
+// Start webhook server
+const app = express();
+app.use(express.json());
+
+app.post('/dblwebhook', async (req, res) => {
+  const userId = req.body.user;
+  if (!userId) return res.sendStatus(400);
+
+  try {
+    const connection = await mysql.createConnection({
+      host: process.env.MYSQLHOST,
+      user: process.env.MYSQLUSER,
+      password: process.env.MYSQLPASSWORD,
+      database: process.env.MYSQLDATABASE,
+    });
+
+    await connection.execute(
+      `INSERT INTO currency (user_id, flares)
+       VALUES (?, 100)
+       ON DUPLICATE KEY UPDATE flares = flares + 100`,
+      [userId]
+    );
+
+    await connection.end();
+    console.log(`✅ ${userId} voted and received 100 flares!`);
+    res.sendStatus(200);
+  } catch (err) {
+    console.error('❌ Error handling vote:', err);
+    res.sendStatus(500);
+  }
+});
+
+app.listen(port, '0.0.0.0', () => {
+  console.log(`[INFO] Webhook server listening on port ${port}`);
+});
+
+// Run deploy/post scripts and start the bot
 (async () => {
   try {
     console.log("[INFO] Running deploy-commands.js...");
@@ -18,7 +58,6 @@ console.log("[INFO] Starting main process...");
     console.error("[ERROR] Failed to run deploy/post scripts:", err);
   }
 
-  // Now start the bot
   const client = new Client({
     intents: [
       GatewayIntentBits.Guilds,
@@ -57,7 +96,7 @@ console.log("[INFO] Starting main process...");
         status: 'online',
       });
       i++;
-    }, 10000); // every 10 seconds
+    }, 10000);
   });
 
   client.on('interactionCreate', async interaction => {
