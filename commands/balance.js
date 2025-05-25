@@ -26,7 +26,6 @@ module.exports = {
 
     await interaction.reply({
       content: `🔥 You have **${flares.toLocaleString()}** flares.`,
-      flags: 64
     });
 
     await connection.end();
