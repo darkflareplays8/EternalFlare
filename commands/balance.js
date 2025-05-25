@@ -43,8 +43,7 @@ module.exports = {
       .setTimestamp();
 
     await interaction.reply({
-      embeds: [embed],
-      flags: hasRecord ? undefined : 64 // only ephemeral if no record
+      embeds: [embed], //darkflare was here, and literally everywhere else
     });
 
     await connection.end();
