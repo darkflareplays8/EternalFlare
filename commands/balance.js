@@ -30,24 +30,21 @@ module.exports = {
 
     let flares = 0;
     let hasRecord = false;
+
     if (rows.length > 0) {
       flares = rows[0].flares;
       hasRecord = true;
     }
 
     const embed = new EmbedBuilder()
-      .setAuthor({ name: `${targetUser.username}'s Balance`, iconURL: targetUser.displayAvatarURL() })
+      .setTitle('🔥 Flares 🔥')
       .setColor('#FF4500')
-      .addFields({
-        name: '🔥 Flares',
-        value: hasRecord ? `**${flares.toLocaleString()}**` : '*No record found*',
-        inline: true
-      })
+      .setDescription(`🔥 ${targetUser.username} has **${flares.toLocaleString()}** flares 🔥`)
       .setTimestamp();
 
     await interaction.reply({
       embeds: [embed],
-      flags: 64
+      flags: hasRecord ? undefined : 64 // only ephemeral if no record
     });
 
     await connection.end();
