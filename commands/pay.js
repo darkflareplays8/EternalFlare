@@ -66,7 +66,7 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setTitle('Flares Payed 🔥')
-        .setColor('#00BFFF')
+        .setColor('#FF4500')
         .setDescription(`${sender.username} sent **${amount.toLocaleString()}** flares to ${recipient.username}.`)
         .setTimestamp();
 
