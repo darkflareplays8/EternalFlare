@@ -80,58 +80,13 @@ app.listen(port, '0.0.0.0', () => {
     }
   }
 
-  // Import stickyMessages map from sticky command for bumping logic
-  const { stickyMessages } = require('./commands/sticky');
-
-  // Listen for new messages to bump sticky messages
-client.on('messageCreate', async (message) => {
-  if (message.author.bot) return;
-
-  const channelId = message.channel.id;
-
-  if (stickyMessages.has(channelId)) {
-    const stickyData = stickyMessages.get(channelId);
-    const now = Date.now();
-
-    // Check if enough time has passed since last bump
-    if (now - stickyData.lastBump < stickyData.msDelay) return;
-
-    try {
-      await stickyData.stickyMsg.delete();
-      const newStickyMsg = await message.channel.send(stickyData.messageContent);
-
-      // Update stickyMessages with new message and updated lastBump timestamp
-      stickyMessages.set(channelId, {
-        stickyMsg: newStickyMsg,
-        messageContent: stickyData.messageContent,
-        msDelay: stickyData.msDelay,
-        lastBump: now,
-      });
-    } catch (err) {
-      console.error(`[ERROR] Failed to bump sticky message in channel ${channelId}:`, err);
-    }
-  }
-});
-
-
-
   client.once('ready', () => {
     console.log(`✅ Logged in as ${client.user.tag}!`);
 
-    const activities = [
-      { name: '/help', type: 'WATCHING' },
-      { name: 'with fire', type: 'PLAYING' }
-    ];
-
-    let i = 0;
-    setInterval(() => {
-      const activity = activities[i % activities.length];
-      client.user.setPresence({
-        activities: [activity],
-        status: 'online',
-      });
-      i++;
-    }, 10000);
+    client.user.setPresence({
+      activities: [{ name: 'with fire', type: 'PLAYING' }],
+      status: 'online',
+    });
   });
 
   client.on('interactionCreate', async interaction => {
