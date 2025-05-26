@@ -14,7 +14,7 @@ module.exports = {
         .setDescription('The role to give to those members')
         .setRequired(true)
     ),
-
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles), // Optional: restrict to admins
   async execute(interaction) {
     const sourceRole = interaction.options.getRole('source_role');
     const targetRole = interaction.options.getRole('target_role');
