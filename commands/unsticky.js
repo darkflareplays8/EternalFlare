@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { stickyMessages } = require('./sticky'); // Import the correct map
+const { stickyMessages } = require('./sticky'); // Import the stickyMessages map
 
 module.exports = {
   data: new SlashCommandBuilder()
