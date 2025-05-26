@@ -1,34 +1,51 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
+// Map to track sticky messages per channel
+const stickyIntervals = new Map();
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('sticky')
-    .setDescription('Sends a sticky message that bumps after a delay (optional).')
+    .setDescription('Sends a sticky message that bumps forever.')
     .addStringOption(option =>
       option.setName('message')
         .setDescription('The message to stick.')
         .setRequired(true))
     .addIntegerOption(option =>
       option.setName('msdelay')
-        .setDescription('Delay in milliseconds before bumping.')
+        .setDescription('Delay in milliseconds before bumping (min: 5000ms)')
         .setRequired(false))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages), // Only mods/admins by default
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
   async execute(interaction) {
     const messageContent = interaction.options.getString('message');
-    const msDelay = interaction.options.getInteger('msdelay') ?? null;
+    const msDelay = interaction.options.getInteger('msdelay') ?? 30000;
+    const channelId = interaction.channel.id;
 
-    await interaction.reply({ content: 'Sticky message created!', flags: 64 });
-
-    const sentMessage = await interaction.channel.send(messageContent);
-
-    if (msDelay && msDelay > 0) {
-      setTimeout(async () => {
-        try {
-          await interaction.channel.send(messageContent);
-        } catch (err) {
-          console.error('[ERROR] Failed to resend sticky message:', err);
-        }
-      }, msDelay);
+    if (stickyIntervals.has(channelId)) {
+      return interaction.reply({ content: '❌ A sticky message is already active in this channel. Use /stickyremove first.', flags: 64 });
     }
+
+    if (msDelay < 5000) {
+      return interaction.reply({ content: '❌ Delay must be at least 5000ms (5 seconds) to prevent spam.', flags: 64 });
+    }
+
+    await interaction.reply({ content: `✅ Sticky message started (every ${msDelay}ms)`, flags: 64 });
+
+    let stickyMsg = await interaction.channel.send(messageContent);
+
+    const interval = setInterval(async () => {
+      try {
+        await stickyMsg.delete();
+        stickyMsg = await interaction.channel.send(messageContent);
+      } catch (err) {
+        console.error(`[ERROR] Sticky bump failed in channel ${channelId}:`, err);
+      }
+    }, msDelay);
+
+    stickyIntervals.set(channelId, interval);
   },
+
+  // Export for external use (stickyremove command)
+  stickyIntervals,
 };
+
