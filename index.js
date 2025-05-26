@@ -84,23 +84,34 @@ app.listen(port, '0.0.0.0', () => {
   const { stickyMessages } = require('./commands/sticky');
 
   // Listen for new messages to bump sticky messages
-  client.on('messageCreate', async (message) => {
-    if (message.author.bot) return;
+client.on('messageCreate', async (message) => {
+  if (message.author.bot) return;
 
-    const channelId = message.channel.id;
+  const channelId = message.channel.id;
 
-    if (stickyMessages.has(channelId)) {
-      const { stickyMsg, messageContent } = stickyMessages.get(channelId);
+  if (stickyMessages.has(channelId)) {
+    const stickyData = stickyMessages.get(channelId);
+    const now = Date.now();
 
-      try {
-        await stickyMsg.delete();
-        const newStickyMsg = await message.channel.send(messageContent);
-        stickyMessages.set(channelId, { stickyMsg: newStickyMsg, messageContent });
-      } catch (err) {
-        console.error(`[ERROR] Failed to bump sticky message in channel ${channelId}:`, err);
-      }
+    // Check if enough time has passed since last bump
+    if (now - (stickyData.lastBump || 0) < stickyData.msDelay) return;
+
+    try {
+      await stickyData.stickyMsg.delete();
+      const newStickyMsg = await message.channel.send(stickyData.messageContent);
+
+      stickyMessages.set(channelId, {
+        stickyMsg: newStickyMsg,
+        messageContent: stickyData.messageContent,
+        msDelay: stickyData.msDelay,
+        lastBump: now,
+      });
+    } catch (err) {
+      console.error(`[ERROR] Failed to bump sticky message in channel ${channelId}:`, err);
     }
-  });
+  }
+});
+
 
   client.once('ready', () => {
     console.log(`✅ Logged in as ${client.user.tag}!`);
