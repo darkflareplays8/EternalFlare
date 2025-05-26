@@ -1,51 +1,33 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
 // Map to track sticky messages per channel
-const stickyIntervals = new Map();
+// Stores { stickyMsg: Message }
+const stickyMessages = new Map();
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('sticky')
-    .setDescription('Sends a sticky message that bumps forever.')
+    .setDescription('Sends a sticky message that bumps when a new message is sent.')
     .addStringOption(option =>
       option.setName('message')
         .setDescription('The message to stick.')
         .setRequired(true))
-    .addIntegerOption(option =>
-      option.setName('msdelay')
-        .setDescription('Delay in milliseconds before bumping (min: 3000ms)')
-        .setRequired(false))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
+
   async execute(interaction) {
     const messageContent = interaction.options.getString('message');
-    const msDelay = interaction.options.getInteger('msdelay') ?? 3000;
     const channelId = interaction.channel.id;
 
-    if (stickyIntervals.has(channelId)) {
+    if (stickyMessages.has(channelId)) {
       return interaction.reply({ content: '❌ A sticky message is already active in this channel. Use /stickyremove first.', flags: 64 });
     }
 
-    if (msDelay < 3000) {
-      return interaction.reply({ content: '❌ Delay must be at least 3000ms (3 seconds) to prevent spam.', flags: 64 });
-    }
+    await interaction.reply({ content: `✅ Sticky message started. It will bump when new messages are sent.`, flags: 64 });
 
-    await interaction.reply({ content: `✅ Sticky message started (every ${msDelay}ms)`, flags: 64 });
+    const stickyMsg = await interaction.channel.send(messageContent);
 
-    let stickyMsg = await interaction.channel.send(messageContent);
-
-    const interval = setInterval(async () => {
-      try {
-        await stickyMsg.delete();
-        stickyMsg = await interaction.channel.send(messageContent);
-      } catch (err) {
-        console.error(`[ERROR] Sticky bump failed in channel ${channelId}:`, err);
-      }
-    }, msDelay);
-
-    stickyIntervals.set(channelId, interval);
+    stickyMessages.set(channelId, { stickyMsg, messageContent });
   },
 
-  // Export for external use (stickyremove command)
-  stickyIntervals,
+  stickyMessages,
 };
-
