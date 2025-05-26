@@ -25,7 +25,7 @@ module.exports = {
       return interaction.reply({ content: '❌ A sticky message is already active in this channel. Use /stickyremove first.', flags: 64 });
     }
 
-    if (msDelay < 5000) {
+    if (msDelay < 3000) {
       return interaction.reply({ content: '❌ Delay must be at least 3000ms (3 seconds) to prevent spam.', flags: 64 });
     }
 
