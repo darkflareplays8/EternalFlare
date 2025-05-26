@@ -11,7 +11,7 @@ module.exports = {
       .setDescription(
         `This is a JavaScript-made bot created solely by darkflareplays8.\n` +
         `To invite it to your own server, run /invite.\n` +
-        `To get a command list, run /help.\n` 
+        `To get a command list, run /help.\n` +
         `To support and help me continue maintaining this bot, run /donate.\n`
         
       )
