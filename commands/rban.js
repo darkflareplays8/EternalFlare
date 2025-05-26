@@ -53,6 +53,6 @@ module.exports = {
       }
     }
 
-    await interaction.editReply(`✅ Banned ${bannedCount} member(s) with the **${role.name}** role.\n❌ Failed to ban ${failedCount} member(s).`);
+    await interaction.editReply(`✅ Banned ${bannedCount} member(s) with the **${role.name}** role.\n❌ Failed to ban ${failedCount} member(s).`, flags: 64);
   },
 };
