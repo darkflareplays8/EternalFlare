@@ -94,12 +94,13 @@ client.on('messageCreate', async (message) => {
     const now = Date.now();
 
     // Check if enough time has passed since last bump
-    if (now - (stickyData.lastBump || 0) < stickyData.msDelay) return;
+    if (now - stickyData.lastBump < stickyData.msDelay) return;
 
     try {
       await stickyData.stickyMsg.delete();
       const newStickyMsg = await message.channel.send(stickyData.messageContent);
 
+      // Update stickyMessages with new message and updated lastBump timestamp
       stickyMessages.set(channelId, {
         stickyMsg: newStickyMsg,
         messageContent: stickyData.messageContent,
@@ -111,6 +112,7 @@ client.on('messageCreate', async (message) => {
     }
   }
 });
+
 
 
   client.once('ready', () => {
