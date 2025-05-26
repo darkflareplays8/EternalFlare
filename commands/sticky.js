@@ -18,7 +18,7 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
   async execute(interaction) {
     const messageContent = interaction.options.getString('message');
-    const msDelay = interaction.options.getInteger('msdelay') ?? 30000;
+    const msDelay = interaction.options.getInteger('msdelay') ?? 10;
     const channelId = interaction.channel.id;
 
     if (stickyIntervals.has(channelId)) {
