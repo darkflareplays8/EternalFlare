@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
 // Map to track sticky messages per channel
-// Stores { stickyMsg: Message, messageContent: string, msDelay: number }
+// Stores { stickyMsg: Message, messageContent: string, msDelay: number, lastBump: number }
 const stickyMessages = new Map();
 
 module.exports = {
@@ -14,14 +14,14 @@ module.exports = {
         .setRequired(true))
     .addIntegerOption(option =>
       option.setName('msdelay')
-        .setDescription('Delay in milliseconds before bumping after a new message (min 3000ms)')
+        .setDescription('Delay in milliseconds before bumping after a new message (minimum 3000ms)')
         .setMinValue(3000)
         .setRequired(false))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
 
   async execute(interaction) {
     const messageContent = interaction.options.getString('message');
-    const msDelay = interaction.options.getInteger('msdelay') ?? 3000; // default 3000ms
+    const msDelay = interaction.options.getInteger('msdelay') ?? 3000; // Default 3000ms if not provided
     const channelId = interaction.channel.id;
 
     if (stickyMessages.has(channelId)) {
@@ -32,7 +32,13 @@ module.exports = {
 
     const stickyMsg = await interaction.channel.send(messageContent);
 
-    stickyMessages.set(channelId, { stickyMsg, messageContent, msDelay, lastBump: 0 });
+    // Initialize lastBump to current time to start delay timer
+    stickyMessages.set(channelId, {
+      stickyMsg,
+      messageContent,
+      msDelay,
+      lastBump: Date.now(),
+    });
   },
 
   stickyMessages,
