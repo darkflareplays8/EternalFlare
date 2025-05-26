@@ -13,12 +13,12 @@ module.exports = {
         .setRequired(true))
     .addIntegerOption(option =>
       option.setName('msdelay')
-        .setDescription('Delay in milliseconds before bumping (min: 5000ms)')
+        .setDescription('Delay in milliseconds before bumping (min: 3000ms)')
         .setRequired(false))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
   async execute(interaction) {
     const messageContent = interaction.options.getString('message');
-    const msDelay = interaction.options.getInteger('msdelay') ?? 10;
+    const msDelay = interaction.options.getInteger('msdelay') ?? 3000;
     const channelId = interaction.channel.id;
 
     if (stickyIntervals.has(channelId)) {
@@ -26,7 +26,7 @@ module.exports = {
     }
 
     if (msDelay < 5000) {
-      return interaction.reply({ content: '❌ Delay must be at least 5000ms (5 seconds) to prevent spam.', flags: 64 });
+      return interaction.reply({ content: '❌ Delay must be at least 3000ms (3 seconds) to prevent spam.', flags: 64 });
     }
 
     await interaction.reply({ content: `✅ Sticky message started (every ${msDelay}ms)`, flags: 64 });
