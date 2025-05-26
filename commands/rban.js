@@ -26,12 +26,12 @@ module.exports = {
     const deleteDays = interaction.options.getInteger('delete_days') || 0;
 
     if (!role) {
-      return interaction.reply({ content: '❌ Role not found.', flags: 64 });
+      return interaction.reply({ content: '❌ Role not found.', ephemeral: true });
     }
 
     const membersWithRole = role.members;
     if (!membersWithRole || membersWithRole.size === 0) {
-      return interaction.reply({ content: '⚠️ No members have this role.', flags: 64 });
+      return interaction.reply({ content: '⚠️ No members have this role.', ephemeral: true });
     }
 
     await interaction.deferReply();
@@ -48,11 +48,16 @@ module.exports = {
       try {
         await member.ban({ reason, deleteMessageDays: deleteDays });
         bannedCount++;
+        // Optional: Add a small delay to avoid rate limits
+        // await new Promise(res => setTimeout(res, 500));
       } catch {
         failedCount++;
       }
     }
 
-    await interaction.editReply(`✅ Banned ${bannedCount} member(s) with the **${role.name}** role.\n❌ Failed to ban ${failedCount} member(s).`, flags: 64);
+    await interaction.editReply({
+      content: `✅ Banned ${bannedCount} member(s) with the **${role.name}** role.\n❌ Failed to ban ${failedCount} member(s).`,
+      ephemeral: true
+    });
   },
 };
