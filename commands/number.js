@@ -20,7 +20,7 @@ module.exports = {
     if (min >= max) {
       return await interaction.reply({
         content: '❌ The minimum value must be less than the maximum value.',
-        flags: InteractionResponseFlags.Ephemeral
+        flags: 64 // Ephemeral
       });
     }
 
