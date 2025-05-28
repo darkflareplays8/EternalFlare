@@ -27,7 +27,7 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    await interaction.deferReply(); // defer immediately to avoid timeout
+    await interaction.deferReply();
 
     const challenger = interaction.user;
     const opponent = interaction.options.getUser('user');
@@ -42,12 +42,18 @@ module.exports = {
       return interaction.editReply({ content: 'A game is already active between you two.', ephemeral: true });
     }
 
+    // Accept and Decline buttons
     const acceptButton = new ButtonBuilder()
       .setCustomId(`rps_accept_${challengeId}`)
       .setLabel('Accept')
       .setStyle(ButtonStyle.Success);
 
-    const row = new ActionRowBuilder().addComponents(acceptButton);
+    const declineButton = new ButtonBuilder()
+      .setCustomId(`rps_decline_${challengeId}`)
+      .setLabel('Decline')
+      .setStyle(ButtonStyle.Danger);
+
+    const row = new ActionRowBuilder().addComponents(acceptButton, declineButton);
 
     const embed = new EmbedBuilder()
       .setTitle('Rock Paper Scissors Challenge!')
@@ -65,19 +71,28 @@ module.exports = {
 
     collector.on('collect', async i => {
       if (i.user.id !== opponent.id) {
-        return i.reply({ content: 'Only the challenged user can accept!', flags: 64 });
+        return i.reply({ content: 'Only the challenged user can accept or decline!', flags: 64 });
       }
 
-      collector.stop();
-      activeGames.set(challengeId, { round: 0, maxRounds: rounds, scores: { [challenger.id]: 0, [opponent.id]: 0 } });
+      if (i.customId === `rps_accept_${challengeId}`) {
+        collector.stop();
+        activeGames.set(challengeId, { round: 0, maxRounds: rounds, scores: { [challenger.id]: 0, [opponent.id]: 0 } });
 
-      await i.update({
-        content: `${opponent.tag} accepted the challenge! Check your DMs to play.`,
-        embeds: [],
-        components: [],
-      });
+        await i.update({
+          content: `${opponent.tag} accepted the challenge! Check your DMs to play.`,
+          embeds: [],
+          components: [],
+        });
 
-      await startGame(challenger, opponent, rounds, challengeId, interaction.client, interaction.channel);
+        await startGame(challenger, opponent, rounds, challengeId, interaction.client, interaction.channel);
+      } else if (i.customId === `rps_decline_${challengeId}`) {
+        collector.stop();
+        await i.update({
+          content: `${opponent.tag} declined the challenge.`,
+          embeds: [],
+          components: [],
+        });
+      }
     });
 
     collector.on('end', collected => {
@@ -93,11 +108,14 @@ module.exports = {
 };
 
 async function startGame(challenger, opponent, rounds, challengeId, client, channel) {
-  const buttons = new ActionRowBuilder().addComponents(
+  const moveButtons = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId('rock').setLabel('🪨 Rock').setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId('paper').setLabel('📄 Paper').setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId('scissors').setLabel('✂️ Scissors').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('forfeit').setLabel('Forfeit').setStyle(ButtonStyle.Danger)
   );
+
+  let earlyForfeit = false;
 
   for (let round = 1; round <= rounds; round++) {
     const choices = {};
@@ -106,8 +124,8 @@ async function startGame(challenger, opponent, rounds, challengeId, client, chan
     for (const player of players) {
       try {
         const dm = await player.send({
-          content: `**Round ${round}**: Choose your move!`,
-          components: [buttons],
+          content: `**Round ${round}**: Choose your move! Or press Forfeit to end the match.`,
+          components: [moveButtons],
         });
 
         const collector = dm.createMessageComponentCollector({
@@ -118,8 +136,13 @@ async function startGame(challenger, opponent, rounds, challengeId, client, chan
 
         const choice = await new Promise((resolve) => {
           collector.on('collect', async i => {
-            await i.update({ content: `You chose **${i.customId}**.`, components: [] });
-            resolve(i.customId);
+            if (i.customId === 'forfeit') {
+              await i.update({ content: 'You forfeited the match.', components: [] });
+              resolve('forfeit');
+            } else {
+              await i.update({ content: `You chose **${i.customId}**.`, components: [] });
+              resolve(i.customId);
+            }
           });
 
           collector.on('end', collected => {
@@ -127,7 +150,10 @@ async function startGame(challenger, opponent, rounds, challengeId, client, chan
           });
         });
 
-        if (!choice) {
+        if (choice === 'forfeit') {
+          earlyForfeit = player.id;
+          break;
+        } else if (!choice) {
           await player.send('You did not choose in time. You forfeit this round.');
           choices[player.id] = 'none';
         } else {
@@ -136,6 +162,18 @@ async function startGame(challenger, opponent, rounds, challengeId, client, chan
       } catch {
         choices[player.id] = 'none';
       }
+    }
+
+    // If someone forfeited the match, end early
+    if (earlyForfeit) {
+      const forfeiter = earlyForfeit === challenger.id ? challenger : opponent;
+      const winner = earlyForfeit === challenger.id ? opponent : challenger;
+      const summary = `**${forfeiter.tag} forfeited the match! ${winner.tag} wins by default.**`;
+      await challenger.send(summary);
+      await opponent.send(summary);
+      await channel.send(summary);
+      activeGames.delete(challengeId);
+      return;
     }
 
     const result = getRoundResult(choices[challenger.id], choices[opponent.id]);
