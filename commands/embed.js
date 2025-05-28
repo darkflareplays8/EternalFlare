@@ -42,6 +42,13 @@ module.exports = {
       });
     }
 
-    await interaction.reply({ embeds: [embed] });
+    // 1. Ephemeral confirmation to the user
+    await interaction.reply({
+      content: "✅ Embed sent to the channel!",
+      ephemeral: true,
+    });
+
+    // 2. Send the embed as a normal message to the channel
+    await interaction.channel.send({ embeds: [embed] });
   },
 };
