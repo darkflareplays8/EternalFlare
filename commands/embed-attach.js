@@ -2,7 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require("disc
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("embed attach")
+    .setName("embed-attach")
     .setDescription("Attch a customizable embed to an existing message.")
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .addSubcommand(sub =>
