@@ -35,9 +35,15 @@ module.exports = {
       .setTimestamp();
 
     if (image) embed.setImage(image);
+
     if (footer) {
       embed.setFooter({
-        text: footer,
+        text: `${footer} | EternalFlare Embeds`,
+        iconURL: interaction.user.displayAvatarURL(),
+      });
+    } else {
+      embed.setFooter({
+        text: "EternalFlare Embeds",
         iconURL: interaction.user.displayAvatarURL(),
       });
     }
