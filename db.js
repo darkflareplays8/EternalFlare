@@ -5,7 +5,7 @@ const pool = mysql.createPool({
   user: process.env.MYSQLUSER,                // not MYSQL_USER
   password: process.env.MYSQLPASSWORD,        // not MYSQL_PASSWORD
   database: process.env.MYSQL_DATABASE,
-  port: 3306, // most likely, unless Railway says otherwise
+  port: 4000, // most likely, unless Railway says otherwise
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
