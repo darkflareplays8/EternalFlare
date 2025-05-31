@@ -12,7 +12,7 @@ module.exports = {
       user: process.env.MYSQLUSER,
       password: process.env.MYSQLPASSWORD,
       database: process.env.MYSQL_DATABASE,
-      port: 3306,
+      port: 4000,
     });
 
     const userId = interaction.user.id;
@@ -48,8 +48,8 @@ module.exports = {
       );
 
       await interaction.reply({
-        content: `🌟 You received **${dailyAmount.toLocaleString()} flares**!`,
-        flags: 64,
+        content: `🌟 You received **${dailyAmount.toLocaleString()} flares**!`
+
       });
     } catch (err) {
       console.error(err);
