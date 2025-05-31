@@ -13,6 +13,7 @@ module.exports = {
       password: process.env.MYSQLPASSWORD,
       database: process.env.MYSQL_DATABASE,
       port: 4000,
+      ssl: { rejectUnauthorized: true } // <-- Required for TiDB Serverless
     });
 
     const userId = interaction.user.id;
@@ -49,7 +50,6 @@ module.exports = {
 
       await interaction.reply({
         content: `🌟 You received **${dailyAmount.toLocaleString()} flares**!`
-
       });
     } catch (err) {
       console.error(err);
