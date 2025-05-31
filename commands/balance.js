@@ -15,13 +15,15 @@ module.exports = {
   async execute(interaction) {
     const targetUser = interaction.options.getUser('user') || interaction.user;
 
-    const connection = await mysql.createConnection({
-      host: process.env.MYSQLHOST,
-      user: process.env.MYSQLUSER,
-      password: process.env.MYSQLPASSWORD,
-      database: process.env.MYSQL_DATABASE,
-      port: 3306
-    });
+const connection = await mysql.createConnection({
+  host: process.env.MYSQLHOST,
+  user: process.env.MYSQLUSER, // Should include the prefix, e.g., 'prefix.username'
+  password: process.env.MYSQLPASSWORD,
+  database: process.env.MYSQL_DATABASE,
+  port: 4000, // TiDB Serverless default
+  ssl: { rejectUnauthorized: true } // Required for secure connection
+});
+
 
     const [rows] = await connection.execute(
       'SELECT flares FROM currency WHERE user_id = ?',
