@@ -15,12 +15,10 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
 
   async execute(interaction) {
-    // Create and show the modal on slash command execution
     const modal = new ModalBuilder()
       .setCustomId("embedModal")
       .setTitle("Create a Custom Embed");
 
-    // Title input (required)
     const titleInput = new TextInputBuilder()
       .setCustomId("embedTitle")
       .setLabel("Embed Title")
@@ -28,15 +26,13 @@ module.exports = {
       .setPlaceholder("Enter the embed title")
       .setRequired(true);
 
-    // Description input (required)
     const descriptionInput = new TextInputBuilder()
       .setCustomId("embedDescription")
       .setLabel("Embed Description (supports mentions)")
       .setStyle(TextInputStyle.Paragraph)
-      .setPlaceholder("Enter the embed description with mentions like @username")
+      .setPlaceholder("Type your message here, mentions like @User or @Role will ping")
       .setRequired(true);
 
-    // Color input (optional)
     const colorInput = new TextInputBuilder()
       .setCustomId("embedColor")
       .setLabel("Embed Color (Hex, e.g. #FF4500)")
@@ -44,7 +40,6 @@ module.exports = {
       .setPlaceholder("#FF4500 or leave blank for default")
       .setRequired(false);
 
-    // Image URL input (optional)
     const imageInput = new TextInputBuilder()
       .setCustomId("embedImage")
       .setLabel("Image URL")
@@ -52,7 +47,6 @@ module.exports = {
       .setPlaceholder("https://example.com/image.png")
       .setRequired(false);
 
-    // Footer input (optional)
     const footerInput = new TextInputBuilder()
       .setCustomId("embedFooter")
       .setLabel("Footer Text")
@@ -60,14 +54,13 @@ module.exports = {
       .setPlaceholder("Footer text or leave blank")
       .setRequired(false);
 
-    // Add inputs to action rows (one input per row)
-    const firstRow = new ActionRowBuilder().addComponents(titleInput);
-    const secondRow = new ActionRowBuilder().addComponents(descriptionInput);
-    const thirdRow = new ActionRowBuilder().addComponents(colorInput);
-    const fourthRow = new ActionRowBuilder().addComponents(imageInput);
-    const fifthRow = new ActionRowBuilder().addComponents(footerInput);
-
-    modal.addComponents(firstRow, secondRow, thirdRow, fourthRow, fifthRow);
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(titleInput),
+      new ActionRowBuilder().addComponents(descriptionInput),
+      new ActionRowBuilder().addComponents(colorInput),
+      new ActionRowBuilder().addComponents(imageInput),
+      new ActionRowBuilder().addComponents(footerInput)
+    );
 
     await interaction.showModal(modal);
   },
@@ -107,25 +100,26 @@ module.exports = {
       });
     }
 
-    // Extract mentioned user and role IDs from description string
-    const userIds = [...description.matchAll(/<@!?(\d+)>/g)].map(m => m[1]);
-    const roleIds = [...description.matchAll(/<@&(\d+)>/g)].map(m => m[1]);
+    // Extract user mentions from description (<@123456789012345678> or <@!123456789012345678>)
+    const userMentions = [...description.matchAll(/<@!?(\d+)>/g)].map(m => m[1]);
+    // Extract role mentions from description (<@&123456789012345678>)
+    const roleMentions = [...description.matchAll(/<@&(\d+)>/g)].map(m => m[1]);
 
-    // Filter IDs to only those that exist in the guild cache (optional but recommended)
-    const validUserIds = userIds.filter(id => interaction.guild.members.cache.has(id));
-    const validRoleIds = roleIds.filter(id => interaction.guild.roles.cache.has(id));
+    // Filter IDs to those existing in the guild cache (optional but recommended)
+    const validUserMentions = userMentions.filter(id => interaction.guild.members.cache.has(id));
+    const validRoleMentions = roleMentions.filter(id => interaction.guild.roles.cache.has(id));
 
     await interaction.channel.send({
       embeds: [embed],
       allowedMentions: {
-        users: validUserIds,
-        roles: validRoleIds,
+        users: validUserMentions,
+        roles: validRoleMentions,
       },
     });
 
     await interaction.reply({
       content: "✅ Embed sent to the channel!",
-      flags: 64, // Use flags: 64 for ephemeral reply in discord.js v14
+      flags: 64, // ephemeral reply
     });
   },
 };
