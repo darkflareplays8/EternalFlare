@@ -15,7 +15,7 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
 
   async execute(interaction) {
-    // Show the modal on slash command execution
+    // Create and show the modal on slash command execution
     const modal = new ModalBuilder()
       .setCustomId("embedModal")
       .setTitle("Create a Custom Embed");
@@ -31,9 +31,9 @@ module.exports = {
     // Description input (required)
     const descriptionInput = new TextInputBuilder()
       .setCustomId("embedDescription")
-      .setLabel("Embed Description")
+      .setLabel("Embed Description (supports mentions)")
       .setStyle(TextInputStyle.Paragraph)
-      .setPlaceholder("Enter the embed description")
+      .setPlaceholder("Enter the embed description with mentions like <@123456789012345678>")
       .setRequired(true);
 
     // Color input (optional)
@@ -60,7 +60,7 @@ module.exports = {
       .setPlaceholder("Footer text or leave blank")
       .setRequired(false);
 
-    // Add inputs to action rows (max 1 input per ActionRow)
+    // Add inputs to action rows (one input per row)
     const firstRow = new ActionRowBuilder().addComponents(titleInput);
     const secondRow = new ActionRowBuilder().addComponents(descriptionInput);
     const thirdRow = new ActionRowBuilder().addComponents(colorInput);
@@ -72,7 +72,7 @@ module.exports = {
     await interaction.showModal(modal);
   },
 
-  // This function should be called in your main bot file's interactionCreate event
+  // This function should be called from your main bot's interactionCreate event when a modal submit occurs
   async handleModalSubmit(interaction) {
     if (interaction.customId !== "embedModal") return;
 
@@ -110,8 +110,18 @@ module.exports = {
       });
     }
 
-    // Send the embed to the channel where the command was triggered
-    await interaction.channel.send({ embeds: [embed] });
+    // Parse mentions from description for allowedMentions
+    const userMentions = [...description.matchAll(/<@!?(\d+)>/g)].map(m => m[1]);
+    const roleMentions = [...description.matchAll(/<@&(\d+)>/g)].map(m => m[1]);
+
+    // Send the embed with allowedMentions so mentions ping correctly
+    await interaction.channel.send({
+      embeds: [embed],
+      allowedMentions: {
+        users: userMentions,
+        roles: roleMentions,
+      },
+    });
 
     // Confirm to the user privately
     await interaction.reply({
