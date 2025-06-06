@@ -33,7 +33,7 @@ module.exports = {
       .setCustomId("embedDescription")
       .setLabel("Embed Description (supports mentions)")
       .setStyle(TextInputStyle.Paragraph)
-      .setPlaceholder("Enter the embed description with mentions like <@123456789012345678>")
+      .setPlaceholder("Enter the embed description with mentions like @username")
       .setRequired(true);
 
     // Color input (optional)
@@ -72,11 +72,9 @@ module.exports = {
     await interaction.showModal(modal);
   },
 
-  // This function should be called from your main bot's interactionCreate event when a modal submit occurs
   async handleModalSubmit(interaction) {
     if (interaction.customId !== "embedModal") return;
 
-    // Extract modal inputs
     const title = interaction.fields.getTextInputValue("embedTitle");
     const description = interaction.fields.getTextInputValue("embedDescription");
     let color = interaction.fields.getTextInputValue("embedColor");
@@ -89,7 +87,6 @@ module.exports = {
     }
     if (color[0] !== "#") color = "#" + color;
 
-    // Build the embed
     const embed = new EmbedBuilder()
       .setTitle(title)
       .setDescription(description)
@@ -110,23 +107,25 @@ module.exports = {
       });
     }
 
-    // Parse mentions from description for allowedMentions
-    const userMentions = [...description.matchAll(/<@!?(\d+)>/g)].map(m => m[1]);
-    const roleMentions = [...description.matchAll(/<@&(\d+)>/g)].map(m => m[1]);
+    // Extract mentioned user and role IDs from description string
+    const userIds = [...description.matchAll(/<@!?(\d+)>/g)].map(m => m[1]);
+    const roleIds = [...description.matchAll(/<@&(\d+)>/g)].map(m => m[1]);
 
-    // Send the embed with allowedMentions so mentions ping correctly
+    // Filter IDs to only those that exist in the guild cache (optional but recommended)
+    const validUserIds = userIds.filter(id => interaction.guild.members.cache.has(id));
+    const validRoleIds = roleIds.filter(id => interaction.guild.roles.cache.has(id));
+
     await interaction.channel.send({
       embeds: [embed],
       allowedMentions: {
-        users: userMentions,
-        roles: roleMentions,
+        users: validUserIds,
+        roles: validRoleIds,
       },
     });
 
-    // Confirm to the user privately
     await interaction.reply({
       content: "✅ Embed sent to the channel!",
-      ephemeral: true,
+      flags: 64, // Use flags: 64 for ephemeral reply in discord.js v14
     });
   },
 };
