@@ -1,18 +1,15 @@
+// commands/lock.js
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('lock')
-    .setDescription('Locks or unlocks the current channel.')
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('enable')
-        .setDescription('Locks the channel and deletes messages sent.')
+    .setDescription('Lock or unlock the current channel')
+    .addSubcommand(sub =>
+      sub.setName('enable').setDescription('Lock this channel')
     )
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('disable')
-        .setDescription('Unlocks the channel.')
+    .addSubcommand(sub =>
+      sub.setName('disable').setDescription('Unlock this channel')
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
 
@@ -20,30 +17,48 @@ module.exports = {
     const subcommand = interaction.options.getSubcommand();
     const channel = interaction.channel;
 
+    global.lockedChannels = global.lockedChannels || new Set();
+
     if (subcommand === 'enable') {
-      await channel.permissionOverwrites.edit(channel.guild.roles.everyone, {
-        SendMessages: false,
-      });
+      try {
+        await channel.permissionOverwrites.edit(interaction.guild.roles.everyone, {
+          SendMessages: false,
+        });
 
-      global.lockedChannels = global.lockedChannels || new Set();
-      global.lockedChannels.add(channel.id);
+        global.lockedChannels.add(channel.id);
 
-      await interaction.reply({
-        content: `🔒 Channel has been locked. Any messages sent will be deleted.`,
-        flags: 64, // ephemeral
-      });
-    } else if (subcommand === 'disable') {
-      await channel.permissionOverwrites.edit(channel.guild.roles.everyone, {
-        SendMessages: true,
-      });
-
-      global.lockedChannels = global.lockedChannels || new Set();
-      global.lockedChannels.delete(channel.id);
-
-      await interaction.reply({
-        content: `🔓 Channel has been unlocked.`,
-        flags: 64,
-      });
+        await interaction.reply({
+          content: `🔒 Channel locked. Messages will be deleted.`,
+          flags: 64,
+        });
+      } catch (err) {
+        console.error('Failed to lock channel:', err);
+        await interaction.reply({
+          content: '❌ Failed to lock the channel.',
+          flags: 64,
+        });
+      }
     }
-  },
+
+    if (subcommand === 'disable') {
+      try {
+        await channel.permissionOverwrites.edit(interaction.guild.roles.everyone, {
+          SendMessages: null,
+        });
+
+        global.lockedChannels.delete(channel.id);
+
+        await interaction.reply({
+          content: `🔓 Channel unlocked.`,
+          flags: 64,
+        });
+      } catch (err) {
+        console.error('Failed to unlock channel:', err);
+        await interaction.reply({
+          content: '❌ Failed to unlock the channel.',
+          flags: 64,
+        });
+      }
+    }
+  }
 };
