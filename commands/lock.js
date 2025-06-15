@@ -4,61 +4,35 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('lock')
-    .setDescription('Lock or unlock the current channel')
+    .setDescription('Enable or disable message deletion in this channel')
     .addSubcommand(sub =>
-      sub.setName('enable').setDescription('Lock this channel')
+      sub.setName('enable').setDescription('Start deleting all messages in this channel')
     )
     .addSubcommand(sub =>
-      sub.setName('disable').setDescription('Unlock this channel')
+      sub.setName('disable').setDescription('Stop deleting messages in this channel')
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
 
   async execute(interaction) {
     const subcommand = interaction.options.getSubcommand();
-    const channel = interaction.channel;
+    const channelId = interaction.channel.id;
 
     global.lockedChannels = global.lockedChannels || new Set();
 
     if (subcommand === 'enable') {
-      try {
-        await channel.permissionOverwrites.edit(interaction.guild.roles.everyone, {
-          SendMessages: false,
-        });
-
-        global.lockedChannels.add(channel.id);
-
-        await interaction.reply({
-          content: `🔒 Channel locked. Messages will be deleted.`,
-          flags: 64,
-        });
-      } catch (err) {
-        console.error('Failed to lock channel:', err);
-        await interaction.reply({
-          content: '❌ Failed to lock the channel.',
-          flags: 64,
-        });
-      }
+      global.lockedChannels.add(channelId);
+      await interaction.reply({
+        content: `🔒 This channel is now locked. All messages will be deleted immediately.`,
+        flags: 64
+      });
     }
 
     if (subcommand === 'disable') {
-      try {
-        await channel.permissionOverwrites.edit(interaction.guild.roles.everyone, {
-          SendMessages: null,
-        });
-
-        global.lockedChannels.delete(channel.id);
-
-        await interaction.reply({
-          content: `🔓 Channel unlocked.`,
-          flags: 64,
-        });
-      } catch (err) {
-        console.error('Failed to unlock channel:', err);
-        await interaction.reply({
-          content: '❌ Failed to unlock the channel.',
-          flags: 64,
-        });
-      }
+      global.lockedChannels.delete(channelId);
+      await interaction.reply({
+        content: `🔓 This channel is now unlocked. Messages will no longer be deleted.`,
+        flags: 64
+      });
     }
   }
 };
