@@ -15,7 +15,7 @@ if (!token) {
 
 console.log('[INFO] Starting main process...');
 
-// Setup MySQL connection pool for better performance
+// Setup MySQL connection pool
 const pool = mysql.createPool({
   host: process.env.MYSQLHOST,
   user: process.env.MYSQLUSER,
@@ -59,7 +59,7 @@ app.listen(port, '0.0.0.0', () => {
   console.log(`[INFO] Webhook server listening on port ${port}`);
 });
 
-// Main async IIFE to deploy commands and start bot
+// Main async IIFE
 (async () => {
   try {
     console.log('[INFO] Running deploy-commands.js...');
@@ -82,6 +82,9 @@ app.listen(port, '0.0.0.0', () => {
     ],
     partials: [Partials.Message, Partials.Channel, Partials.Reaction],
   });
+
+  // Lock state map
+  global.lockedChannels = new Set();
 
   // Load commands dynamically
   client.commands = new Collection();
@@ -111,9 +114,7 @@ app.listen(port, '0.0.0.0', () => {
 
         await command.execute(interaction);
       } else if (interaction.isModalSubmit()) {
-        // Example modal handling: check customId and delegate to command if implemented
         if (interaction.customId === 'embedModal') {
-          // Assuming embed.js exports handleModalSubmit
           const embedCommand = client.commands.get('embed');
           if (embedCommand && typeof embedCommand.handleModalSubmit === 'function') {
             await embedCommand.handleModalSubmit(interaction);
@@ -129,6 +130,20 @@ app.listen(port, '0.0.0.0', () => {
         await interaction.followUp(reply);
       } else {
         await interaction.reply(reply);
+      }
+    }
+  });
+
+  // Delete messages in locked channels
+  client.on('messageCreate', async (message) => {
+    if (message.author.bot) return;
+    if (!global.lockedChannels) return;
+
+    if (global.lockedChannels.has(message.channel.id)) {
+      try {
+        await message.delete();
+      } catch (err) {
+        console.error(`[ERROR] Failed to delete message in locked channel ${message.channel.id}:`, err);
       }
     }
   });
