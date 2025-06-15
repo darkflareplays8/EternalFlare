@@ -30,7 +30,7 @@ module.exports = {
       .setCustomId("embedDescription")
       .setLabel("Embed Description (supports mentions)")
       .setStyle(TextInputStyle.Paragraph)
-      .setPlaceholder("Type your message here, mentions like @User or @Role will ping")
+      .setPlaceholder("Type your message here, mentions like @User or @Role will not ping")
       .setRequired(true);
 
     const colorInput = new TextInputBuilder()
@@ -44,7 +44,7 @@ module.exports = {
       .setCustomId("embedImage")
       .setLabel("Image URL")
       .setStyle(TextInputStyle.Short)
-      .setPlaceholder("https://example.com/image.png")
+      .setPlaceholder("https://example.com/image.png or leave blank for none")
       .setRequired(false);
 
     const footerInput = new TextInputBuilder()
@@ -90,7 +90,7 @@ module.exports = {
 
     if (footer) {
       embed.setFooter({
-        text: `${footer} | EternalFlare Embeds`,
+        text: `${footer} • EternalFlare Embeds`,
         iconURL: interaction.user.displayAvatarURL(),
       });
     } else {
