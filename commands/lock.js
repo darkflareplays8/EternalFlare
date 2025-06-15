@@ -1,6 +1,7 @@
+// commands/lock.js
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
-const LOCK_NOTICE = ' • Locked by EternalFlare • Run /lock disable to unlock';
+const LOCK_NOTICE = 'Locked by EternalFlare • Run /lock disable to unlock';
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -15,47 +16,45 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
 
   async execute(interaction) {
-    const subcommand = interaction.options.getSubcommand();
+    const sub = interaction.options.getSubcommand();
     const channel = interaction.channel;
-    const channelId = channel.id;
-
     global.lockedChannels = global.lockedChannels || new Set();
 
-    if (subcommand === 'enable') {
-      global.lockedChannels.add(channelId);
+    // Clean up each line for consistent handling
+    const topicLines = (channel.topic || '').split('\n').map(l => l.trim());
 
-      let topicUpdated = true;
-      let newTopic = channel.topic || '';
-      if (!newTopic.includes(LOCK_NOTICE)) {
-        newTopic += (newTopic ? '\n' : '') + LOCK_NOTICE;
+    if (sub === 'enable') {
+      global.lockedChannels.add(channel.id);
+
+      if (!topicLines.includes(LOCK_NOTICE)) {
+        topicLines.push(LOCK_NOTICE);
         try {
-          await channel.setTopic(newTopic);
+          await channel.setTopic(topicLines.filter(Boolean).join('\n'));
         } catch (err) {
-          topicUpdated = false;
           console.error('[LOCK] Failed to update topic:', err);
         }
       }
 
-      return await interaction.reply({
-        content: `🔒 Channel locked. All messages will be deleted.${!topicUpdated ? '\n⚠️ Could not update channel topic (missing permissions?).' : ''}`,
+      return interaction.reply({
+        content: `🔒 Channel locked. All new messages will be deleted.`,
         flags: 64
       });
     }
 
-    if (subcommand === 'disable') {
-      global.lockedChannels.delete(channelId);
+    if (sub === 'disable') {
+      global.lockedChannels.delete(channel.id);
 
-      let topicUpdated = true;
-      let newTopic = (channel.topic || '').split('\n').filter(line => line.trim() !== LOCK_NOTICE).join('\n');
+      // Remove any instance of the LOCK_NOTICE
+      const newLines = topicLines.filter(line => line !== LOCK_NOTICE);
+
       try {
-        await channel.setTopic(newTopic);
+        await channel.setTopic(newLines.join('\n'));
       } catch (err) {
-        topicUpdated = false;
-        console.error('[LOCK] Failed to update topic:', err);
+        console.error('[UNLOCK] Failed to update topic:', err);
       }
 
-      return await interaction.reply({
-        content: `🔓 Channel unlocked. Messages will no longer be deleted.${!topicUpdated ? '\n⚠️ Could not update channel topic (missing permissions?).' : ''}`,
+      return interaction.reply({
+        content: `🔓 Channel unlocked. Messages will no longer be deleted.`,
         flags: 64
       });
     }
