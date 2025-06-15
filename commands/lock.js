@@ -1,4 +1,3 @@
-// commands/lock.js
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
 const LOCK_NOTICE = ' • Locked by EternalFlare • Run /lock disable to unlock';
@@ -25,15 +24,20 @@ module.exports = {
     if (subcommand === 'enable') {
       global.lockedChannels.add(channelId);
 
-      // Append lock notice to topic
+      let topicUpdated = true;
       let newTopic = channel.topic || '';
       if (!newTopic.includes(LOCK_NOTICE)) {
         newTopic += (newTopic ? '\n' : '') + LOCK_NOTICE;
-        await channel.setTopic(newTopic).catch(console.error);
+        try {
+          await channel.setTopic(newTopic);
+        } catch (err) {
+          topicUpdated = false;
+          console.error('[LOCK] Failed to update topic:', err);
+        }
       }
 
-      await interaction.reply({
-        content: `🔒 This channel is now locked. All messages will be deleted immediately.`,
+      return await interaction.reply({
+        content: `🔒 Channel locked. All messages will be deleted.${!topicUpdated ? '\n⚠️ Could not update channel topic (missing permissions?).' : ''}`,
         flags: 64
       });
     }
@@ -41,12 +45,17 @@ module.exports = {
     if (subcommand === 'disable') {
       global.lockedChannels.delete(channelId);
 
-      // Remove lock notice from topic
+      let topicUpdated = true;
       let newTopic = (channel.topic || '').split('\n').filter(line => line.trim() !== LOCK_NOTICE).join('\n');
-      await channel.setTopic(newTopic).catch(console.error);
+      try {
+        await channel.setTopic(newTopic);
+      } catch (err) {
+        topicUpdated = false;
+        console.error('[LOCK] Failed to update topic:', err);
+      }
 
-      await interaction.reply({
-        content: `🔓 This channel is now unlocked. Messages will no longer be deleted.`,
+      return await interaction.reply({
+        content: `🔓 Channel unlocked. Messages will no longer be deleted.${!topicUpdated ? '\n⚠️ Could not update channel topic (missing permissions?).' : ''}`,
         flags: 64
       });
     }
