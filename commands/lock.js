@@ -1,7 +1,7 @@
 // commands/lock.js
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
-const LOCK_NOTICE = 'Locked by EternalFlare • Run /lock disable to unlock';
+const LOCK_NOTICE = ' • Locked by EternalFlare • Run /lock disable to unlock';
 
 module.exports = {
   data: new SlashCommandBuilder()
