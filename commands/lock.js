@@ -1,4 +1,3 @@
-// commands/lock.js
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
 const LOCK_NOTICE = 'Locked by EternalFlare • Run /lock disable to unlock';
@@ -20,12 +19,12 @@ module.exports = {
     const channel = interaction.channel;
     global.lockedChannels = global.lockedChannels || new Set();
 
-    // Clean up each line for consistent handling
-    const topicLines = (channel.topic || '').split('\n').map(l => l.trim());
-
     if (sub === 'enable') {
+      // Set lock state immediately
       global.lockedChannels.add(channel.id);
 
+      // Update topic
+      const topicLines = (channel.topic || '').split('\n').map(l => l.trim());
       if (!topicLines.includes(LOCK_NOTICE)) {
         topicLines.push(LOCK_NOTICE);
         try {
@@ -35,6 +34,7 @@ module.exports = {
         }
       }
 
+      // Reply with ephemeral message using flags: 64
       return interaction.reply({
         content: `🔒 Channel locked. All new messages will be deleted.`,
         flags: 64
@@ -42,17 +42,19 @@ module.exports = {
     }
 
     if (sub === 'disable') {
+      // Remove lock state immediately
       global.lockedChannels.delete(channel.id);
 
-      // Remove any instance of the LOCK_NOTICE
+      // Remove lock notice from topic
+      const topicLines = (channel.topic || '').split('\n').map(l => l.trim());
       const newLines = topicLines.filter(line => line !== LOCK_NOTICE);
-
       try {
         await channel.setTopic(newLines.join('\n'));
       } catch (err) {
         console.error('[UNLOCK] Failed to update topic:', err);
       }
 
+      // Reply with ephemeral message using flags: 64
       return interaction.reply({
         content: `🔓 Channel unlocked. Messages will no longer be deleted.`,
         flags: 64
