@@ -1,6 +1,6 @@
 module.exports = (client) => {
-  const ADMIN_SERVER_ID = 'YOUR_SERVER_ID_HERE';      // placeholder server ID
-  const ADMIN_CHANNEL_ID = 'YOUR_ADMIN_CHANNEL_ID_HERE';  // placeholder admin channel ID
+  const ADMIN_SERVER_ID = '1362145548106334340';      // placeholder server ID
+  const ADMIN_CHANNEL_ID = '1420420899005399131';  // placeholder admin channel ID
   const PREFIX = '?';
 
   client.on('messageCreate', message => {
