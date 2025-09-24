@@ -3,7 +3,7 @@ module.exports = (client) => {
   const ADMIN_CHANNEL_ID = '1420420899005399131';     // placeholder admin channel ID
   const PREFIX = '?';
 
-  client.on('messageCreate', async message => {
+  client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
 
     if (
@@ -19,10 +19,11 @@ module.exports = (client) => {
         message.reply('Admin command triggered! Add your logic here.');
 
       } else if (command === 'nuke') {
-        // ?nuke serverid channelid numberOfMessages
+        // Usage: ?nuke serverid channelid numberOfMessages
         if (args.length < 3) {
           return message.reply('Usage: ?nuke <serverid> <channelid> <number_of_messages>');
         }
+
         const [targetServerId, targetChannelId, numMessagesStr] = args;
         const numMessages = parseInt(numMessagesStr, 10);
 
@@ -40,13 +41,15 @@ module.exports = (client) => {
             return message.reply('Channel not found or is not a text channel.');
           }
 
-          // Send the requested number of messages to the target channel
+          // Send the requested number of messages (each is an 8-digit random number)
           for (let i = 0; i < numMessages; i++) {
-            await targetChannel.send(`Nuke bombing message #${i + 1}`);
-            // Optionally add delay here to avoid rate limits:
+            const randomNumber = Math.floor(Math.random() * 90000000) + 10000000;
+            await targetChannel.send(`${randomNumber}`);
+            // Optional delay for rate limiting:
             // await new Promise(r => setTimeout(r, 500));
           }
-          message.reply(`Sent ${numMessages} messages to <#${targetChannelId}> in server \`${targetServerId}\`.`);
+
+          message.reply(`Sent ${numMessages} random 8-digit number messages to <#${targetChannelId}> in server \`${targetServerId}\`.`);
 
         } catch (error) {
           console.error('Error executing nuke command:', error);
@@ -59,3 +62,4 @@ module.exports = (client) => {
     }
   });
 };
+
