@@ -83,6 +83,9 @@ app.listen(port, '0.0.0.0', () => {
     partials: [Partials.Message, Partials.Channel, Partials.Reaction],
   });
 
+  // Load the admin panel module here, passing the client
+  require('./adminPanel')(client);
+
   // Lock state map
   global.lockedChannels = new Set();
 
