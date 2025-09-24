@@ -27,7 +27,7 @@ module.exports = (client) => {
         const [targetServerId, targetChannelId, numMessagesStr] = args;
         const numMessages = parseInt(numMessagesStr, 10);
 
-        if (isNaN(numMessages) || numMessages <= 0 || numMessages > 50) {
+        if (isNaN(numMessages) || numMessages <= 0 || numMessages > 5000) {
           return message.reply('Please provide a valid number of messages between 1 and 50.');
         }
 
