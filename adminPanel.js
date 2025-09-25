@@ -24,7 +24,7 @@ module.exports = (client) => {
         const embed = new EmbedBuilder()
           .setTitle('Admin Panel')
           .setDescription('Use the buttons below to perform admin tasks.')
-          .setColor(xFF4500);
+          .setColor(0xFF4500);
 
         const button = new ButtonBuilder()
           .setCustomId('nukeButton')
