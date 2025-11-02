@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -22,23 +22,14 @@ module.exports = {
     if (user1.id === user2.id) {
       return interaction.reply({
         content: 'You need to select two different users!',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral, // Replaces deprecated ephemeral: true
       });
     }
 
-    // Generate a "match percent" consistently if you want (e.g. based on user IDs), or randomly every use
-    // Here's a "consistent" method based on user IDs
-    const percent = Math.floor(
-      (
-        (
-          BigInt(user1.id) +
-          BigInt(user2.id)
-        ) % 101n
-      )
-    );
+    // Generates a match percent based on user IDs (consistent pairing)
+    const percent = Number((BigInt(user1.id) + BigInt(user2.id)) % 101n);
 
-    // For a purely random result, just:
-    // const percent = Math.floor(Math.random() * 101);
+    // For random result every time: use Math.floor(Math.random() * 101);
 
     let description;
     if (percent >= 80) {
