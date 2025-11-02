@@ -76,7 +76,11 @@ module.exports = {
 
       if (i.customId === `rps_accept_${challengeId}`) {
         collector.stop();
-        activeGames.set(challengeId, { round: 0, maxRounds: rounds, scores: { [challenger.id]: 0, [opponent.id]: 0 } });
+        activeGames.set(challengeId, {
+          round: 0,
+          maxRounds: rounds,
+          scores: { [challenger.id]: 0, [opponent.id]: 0 }
+        });
 
         await i.update({
           content: `${opponent.tag} accepted the challenge! Check your DMs to play.`,
@@ -84,7 +88,7 @@ module.exports = {
           components: [],
         });
 
-        await startGame(challenger, opponent, rounds, challengeId, interaction.client, interaction.channel);
+        await startGame(challenger, opponent, rounds, challengeId, interaction.client, interaction.channel, message);
       } else if (i.customId === `rps_decline_${challengeId}`) {
         collector.stop();
         await i.update({
@@ -107,7 +111,7 @@ module.exports = {
   },
 };
 
-async function startGame(challenger, opponent, rounds, challengeId, client, channel) {
+async function startGame(challenger, opponent, rounds, challengeId, client, channel, challengeMessage) {
   const moveButtons = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId('rock').setLabel('🪨 Rock').setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId('paper').setLabel('📄 Paper').setStyle(ButtonStyle.Primary),
@@ -116,6 +120,7 @@ async function startGame(challenger, opponent, rounds, challengeId, client, chan
   );
 
   let earlyForfeit = false;
+  let matchEndedEarly = false;
 
   for (let round = 1; round <= rounds; round++) {
     const choices = {};
@@ -152,6 +157,7 @@ async function startGame(challenger, opponent, rounds, challengeId, client, chan
 
         if (choice === 'forfeit') {
           earlyForfeit = player.id;
+          matchEndedEarly = true;
           break;
         } else if (!choice) {
           await player.send('You did not choose in time. You forfeit this round.');
@@ -169,9 +175,21 @@ async function startGame(challenger, opponent, rounds, challengeId, client, chan
       const forfeiter = earlyForfeit === challenger.id ? challenger : opponent;
       const winner = earlyForfeit === challenger.id ? opponent : challenger;
       const summary = `**${forfeiter.tag} forfeited the match! ${winner.tag} wins by default.**`;
+
+      // Announce result in DMs and edit the original message in channel
       await challenger.send(summary);
       await opponent.send(summary);
-      await channel.send(summary);
+
+      if (challengeMessage && challengeMessage.editable) {
+        await challengeMessage.edit({
+          content: summary,
+          embeds: [],
+          components: [],
+        });
+      } else {
+        await channel.send(summary);
+      }
+
       activeGames.delete(challengeId);
       return;
     }
@@ -196,6 +214,9 @@ async function startGame(challenger, opponent, rounds, challengeId, client, chan
     await channel.send(summary);
   }
 
+  // If match ended early due to forfeit, don't show final scores again
+  if (matchEndedEarly) return;
+
   const finalScores = activeGames.get(challengeId).scores;
   const finalResult =
     finalScores[challenger.id] > finalScores[opponent.id]
@@ -208,7 +229,17 @@ async function startGame(challenger, opponent, rounds, challengeId, client, chan
 
   await challenger.send(finalSummary);
   await opponent.send(finalSummary);
-  await channel.send(finalSummary);
+
+  // Edit the original challenge message in the channel with the final result
+  if (challengeMessage && challengeMessage.editable) {
+    await challengeMessage.edit({
+      content: finalSummary,
+      embeds: [],
+      components: [],
+    });
+  } else {
+    await channel.send(finalSummary);
+  }
 
   activeGames.delete(challengeId);
 }
