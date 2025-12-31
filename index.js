@@ -14,7 +14,7 @@ if (!token) {
 
 console.log('[INFO] Starting main process...');
 
-// Start Express webhook server (now simplified without DB)
+// Start Express webhook server (simplified without DB)
 const app = express();
 app.use(express.json());
 
@@ -38,11 +38,8 @@ app.listen(port, '0.0.0.0', () => {
   try {
     console.log('[INFO] Running deploy-commands.js...');
     await require('./deploy-commands.js')();
-
-    console.log('[INFO] Running post-commands.js...');
-    await require('./post-commands.js')();
   } catch (err) {
-    console.error('[ERROR] Failed to run deploy/post scripts:', err);
+    console.error('[ERROR] Failed to run deploy script:', err);
   }
 
   // Create Discord client
