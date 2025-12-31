@@ -2,7 +2,6 @@ const { Client, GatewayIntentBits, Collection, Partials, Events } = require('dis
 const fs = require('node:fs');
 const path = require('node:path');
 const express = require('express');
-const mysql = require('mysql2/promise');
 
 // Load environment variables
 const token = process.env.DISCORD_TOKEN;
@@ -15,18 +14,7 @@ if (!token) {
 
 console.log('[INFO] Starting main process...');
 
-// Setup MySQL connection pool
-const pool = mysql.createPool({
-  host: process.env.MYSQLHOST,
-  user: process.env.MYSQLUSER,
-  password: process.env.MYSQLPASSWORD,
-  database: process.env.MYSQLDATABASE,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-});
-
-// Start Express webhook server
+// Start Express webhook server (now simplified without DB)
 const app = express();
 app.use(express.json());
 
@@ -36,23 +24,9 @@ app.post('/dblwebhook', async (req, res) => {
     return res.sendStatus(400);
   }
 
-  let connection;
-  try {
-    connection = await pool.getConnection();
-    await connection.execute(
-      `INSERT INTO currency (user_id, flares)
-       VALUES (?, 100)
-       ON DUPLICATE KEY UPDATE flares = flares + 100`,
-      [userId]
-    );
-    console.log(`✅ ${userId} voted and received 100 flares!`);
-    res.sendStatus(200);
-  } catch (err) {
-    console.error('❌ Error handling vote:', err);
-    res.sendStatus(500);
-  } finally {
-    if (connection) connection.release();
-  }
+  // TODO: Handle vote reward without MySQL (in-memory, file, etc.)
+  console.log(`✅ ${userId} voted! (Reward logic needs implementation)`);
+  res.sendStatus(200);
 });
 
 app.listen(port, '0.0.0.0', () => {
