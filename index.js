@@ -37,7 +37,6 @@ app.listen(port, '0.0.0.0', () => {
   console.log(`[INFO] Webhook server listening on port ${port}`);
 });
 
-// Rest of your bot code remains the same...
 (async () => {
   try {
     console.log('[INFO] Running deploy-commands.js...');
@@ -46,7 +45,7 @@ app.listen(port, '0.0.0.0', () => {
     console.error('[ERROR] Failed to run deploy script:', err);
   }
 
-  // Discord client setup (same as before)
+  // Discord client setup
   const client = new Client({
     intents: [
       GatewayIntentBits.Guilds,
@@ -72,7 +71,6 @@ app.listen(port, '0.0.0.0', () => {
     }
   }
 
-  // Event handlers (same as before)
   client.once(Events.ClientReady, () => {
     console.log(`✅ Logged in as ${client.user.tag}!`);
     client.user.setPresence({
@@ -81,7 +79,30 @@ app.listen(port, '0.0.0.0', () => {
     });
   });
 
-  // ... rest of your interaction and message handlers unchanged
+  // 🔥 ADD THIS MISSING INTERACTION HANDLER 🔥
+  client.on(Events.InteractionCreate, async interaction => {
+    if (!interaction.isChatInputCommand()) return;
+
+    const command = client.commands.get(interaction.commandName);
+
+    if (!command) {
+      console.error(`No command matching ${interaction.commandName} was found.`);
+      return;
+    }
+
+    try {
+      console.log(`[CMD] Executing ${interaction.commandName} by ${interaction.user.tag}`);
+      await command.execute(interaction);
+    } catch (error) {
+      console.error(`[ERROR] Error executing ${interaction.commandName}:`, error);
+      
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({ content: '❌ Command failed!', ephemeral: true });
+      }
+    }
+  });
+
+  // ... your message handlers go here if any ...
 
   await client.login(token);
 })();
