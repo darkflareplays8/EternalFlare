@@ -1,8 +1,8 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, InteractionType, ComponentType } = require('discord.js');
 
 module.exports = (client) => {
-  const ADMIN_SERVER_ID = '1362145548106334340';     // placeholder server ID
-  const ADMIN_CHANNEL_ID = '1420420899005399131';    // placeholder admin channel ID
+  const ADMIN_SERVER_ID = '1455924604085473361';     // placeholder server ID
+  const ADMIN_CHANNEL_ID = '1455928469434138708';    // placeholder admin channel ID
   const PREFIX = '?';
 
   client.on('messageCreate', async (message) => {
